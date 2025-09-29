@@ -3,7 +3,7 @@ package di
 import (
 	as "be2/internal/api/http"
 	"be2/internal/app"
-	"be2/internal/infra/db"
+	"be2/internal/infra/db/postgres"
 	"go.uber.org/fx"
 )
 

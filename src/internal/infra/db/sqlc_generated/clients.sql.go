@@ -3,7 +3,7 @@
 //   sqlc v1.30.0
 // source: clients.sql
 
-package db
+package sqlc_generated
 
 import (
 	"context"
