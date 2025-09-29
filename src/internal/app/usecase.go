@@ -37,7 +37,9 @@ func (csi *ClientServiceImpl) AddAddress(ctx context.Context, c *domain.Adress) 
 	// 	RegistrationDate: time.Now(),
 	// 	Address:          adress,
 	// }
-	csi.repo.AddAddress(ctx, adress)
+	if err := csi.repo.AddAddress(ctx, adress); err != nil {
+		return err
+	}
 
 	return nil
 
