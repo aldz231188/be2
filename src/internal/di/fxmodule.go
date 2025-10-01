@@ -1,15 +1,23 @@
 package di
 
 import (
-	as "be2/internal/api/http"
 	"be2/internal/app"
+	router "be2/internal/http"
+	"be2/internal/http/v1/handlers"
 	"be2/internal/infra/db/postgres"
 	"go.uber.org/fx"
+	"os"
 )
 
 var App = fx.Options(
 	db.Module,
 	fx.Provide(app.NewClientServiceImpl),
-	fx.Provide(as.NewHandler),
-	fx.Invoke(as.RegisterRoutes),
+	fx.Provide(handlers.NewHandler),
+	fx.Invoke(router.RegisterRoutes),
+	fx.Invoke(func(g fx.DotGraph) {
+		err := os.WriteFile("graph.dot", []byte(g), 0644)
+		if err != nil {
+			panic(err)
+		}
+	}),
 )

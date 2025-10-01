@@ -1,0 +1,49 @@
+digraph {
+	rankdir=RL;
+	graph [compound=true];
+	subgraph cluster_0 {
+		label = "go.uber.org/fx";
+		constructor_0 [shape=plaintext label="New.func1"];
+		"fx.Lifecycle" [label=<fx.Lifecycle>];
+	}
+	subgraph cluster_1 {
+		label = "go.uber.org/fx";
+		constructor_1 [shape=plaintext label="(*App).shutdowner-fm"];
+		"fx.Shutdowner" [label=<fx.Shutdowner>];
+	}
+	subgraph cluster_2 {
+		label = "go.uber.org/fx";
+		constructor_2 [shape=plaintext label="(*App).dotGraph-fm"];
+		"fx.DotGraph" [label=<fx.DotGraph>];
+	}
+	subgraph cluster_3 {
+		label = "be2/internal/infra/db/postgres";
+		constructor_3 [shape=plaintext label="NewPGConfig"];
+		"db.Config" [label=<db.Config>];
+	}
+	subgraph cluster_4 {
+		label = "be2/internal/infra/db/postgres";
+		constructor_4 [shape=plaintext label="NewPool"];
+		"*pgxpool.Pool" [label=<*pgxpool.Pool>];
+	}
+	constructor_4 -> "fx.Lifecycle" [ltail=cluster_4];
+	constructor_4 -> "db.Config" [ltail=cluster_4];
+	subgraph cluster_5 {
+		label = "be2/internal/infra/db/postgres";
+		constructor_5 [shape=plaintext label="NewUserRepo"];
+		"domain.Repo" [label=<domain.Repo>];
+	}
+	constructor_5 -> "*pgxpool.Pool" [ltail=cluster_5];
+	subgraph cluster_6 {
+		label = "be2/internal/app";
+		constructor_6 [shape=plaintext label="NewClientServiceImpl"];
+		"domain.Service" [label=<domain.Service>];
+	}
+	constructor_6 -> "domain.Repo" [ltail=cluster_6];
+	subgraph cluster_7 {
+		label = "be2/internal/http/v1/handlers";
+		constructor_7 [shape=plaintext label="NewHandler"];
+		"handlers.Handler" [label=<handlers.Handler>];
+	}
+	constructor_7 -> "domain.Service" [ltail=cluster_7];
+}

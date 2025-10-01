@@ -1,3 +1,8 @@
+// @title       be2 API
+// @version     1.0
+// @description Internal API
+// @BasePath    /api/v1
+
 package main
 
 import (
@@ -9,7 +14,7 @@ import (
 )
 
 func main() {
-	startCtx, cancel := context.WithTimeout(context.Background(), 15*time.Millisecond)
+	startCtx, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
 	defer cancel()
 	app := fx.New(di.App)
 	if err := app.Start(startCtx); err != nil {

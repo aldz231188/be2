@@ -1,4 +1,4 @@
-package http
+package dto
 
 // import (
 // 	"database/sql/driver"
