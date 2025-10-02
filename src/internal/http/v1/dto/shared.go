@@ -1,5 +1,15 @@
 package dto
 
+import "github.com/google/uuid"
+
+type UUIDRequest struct {
+	Id string `json:"id" validate:"required"`
+}
+
+func (r UUIDRequest) ToDomain() (uuid.UUID, error) {
+	return uuid.Parse(r.Id)
+}
+
 // import (
 // 	"database/sql/driver"
 // 	"fmt"

@@ -17,7 +17,7 @@ type CreateInput struct {
 
 type Service interface {
 	CreateAddress(ctx context.Context, c CreateInput) (uuid.UUID, error)
-	// SaveAdress(c *Adress) error
+	DeleteAddress(ctx context.Context, id uuid.UUID) (int64, error)
 }
 
 var _ Service = (*ServiceImpl)(nil) // гарантирует, что *ServiceImpl реализует Service
@@ -31,7 +31,7 @@ func NewServiceImpl(r domain.AddressRepo) Service { //вынести
 }
 
 func (si *ServiceImpl) CreateAddress(ctx context.Context, c CreateInput) (uuid.UUID, error) {
-	address := domain.Adress{
+	address := domain.Address{
 		Id:      uuid.New(),
 		Country: c.Country,
 		City:    c.City,
@@ -44,6 +44,10 @@ func (si *ServiceImpl) CreateAddress(ctx context.Context, c CreateInput) (uuid.U
 
 	return address.Id, nil
 
+}
+
+func (si *ServiceImpl) DeleteAddress(ctx context.Context, id uuid.UUID) (int64, error) {
+	return si.repo.DeleteAddress(ctx, id)
 }
 
 // func NormalizeDate(d time.Time) time.Time {

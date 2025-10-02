@@ -2,6 +2,7 @@ package db
 
 import (
 	"be2/internal/domain"
+	"be2/internal/infra/db/repo"
 	"go.uber.org/fx"
 )
 
@@ -10,7 +11,7 @@ var Module = fx.Options(
 		NewPGConfig,
 		NewPool,
 		fx.Annotate(
-			NewRepo,
+			repo.NewRepo,
 			fx.As(new(domain.AddressRepo)),
 			// fx.As(new(domain.CustomerRepo)),
 			// fx.As(new(domain.SupplierRepo)),

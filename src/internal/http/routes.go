@@ -14,6 +14,7 @@ import (
 func RegisterRoutes(lc fx.Lifecycle, h handlers.Handler) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /addaddress", h.HandleCreateAddress)
+	mux.HandleFunc("POST /deleteaddress", h.HandleDeleteAddress)
 	mux.HandleFunc("/swagger/", httpSwagger.WrapHandler) // /swagger/index.html
 
 	server := &http.Server{

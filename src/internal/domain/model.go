@@ -21,10 +21,10 @@ type Client struct {
 	Birthday         time.Time
 	Gender           Gender
 	RegistrationDate time.Time
-	Address          Adress
+	Address          Address
 }
 
-type Adress struct {
+type Address struct {
 	Id      uuid.UUID
 	Country string
 	City    string

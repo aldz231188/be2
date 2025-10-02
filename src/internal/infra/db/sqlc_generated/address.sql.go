@@ -11,28 +11,65 @@ import (
 	uuid "github.com/google/uuid"
 )
 
-const addAddress = `-- name: AddAddress :exec
+const createAddress = `-- name: CreateAddress :exec
 INSERT INTO address (id, country,city,street)
 VALUES ($1, $2, $3, $4)
 `
 
-type AddAddressParams struct {
+type CreateAddressParams struct {
 	ID      uuid.UUID
 	Country interface{}
 	City    interface{}
 	Street  interface{}
 }
 
-// -- name: CreateUser :one
-// INSERT INTO client (id, client_name,client_surname,birthday,gender,address_id)
-// VALUES ($1, $2, $3, $4, $5, $6)
-// RETURNING registration_date;
-func (q *Queries) AddAddress(ctx context.Context, arg AddAddressParams) error {
-	_, err := q.db.Exec(ctx, addAddress,
+func (q *Queries) CreateAddress(ctx context.Context, arg CreateAddressParams) error {
+	_, err := q.db.Exec(ctx, createAddress,
 		arg.ID,
 		arg.Country,
 		arg.City,
 		arg.Street,
 	)
 	return err
+}
+
+const deleteAddress = `-- name: DeleteAddress :execrows
+DELETE FROM public.address
+WHERE id = $1
+`
+
+func (q *Queries) DeleteAddress(ctx context.Context, id uuid.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteAddress, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const updateAddress = `-- name: UpdateAddress :execrows
+UPDATE public.address
+SET country = $2,
+    city    = $3,
+    street  = $4
+WHERE id = $1
+`
+
+type UpdateAddressParams struct {
+	ID      uuid.UUID
+	Country interface{}
+	City    interface{}
+	Street  interface{}
+}
+
+func (q *Queries) UpdateAddress(ctx context.Context, arg UpdateAddressParams) (int64, error) {
+	result, err := q.db.Exec(ctx, updateAddress,
+		arg.ID,
+		arg.Country,
+		arg.City,
+		arg.Street,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }

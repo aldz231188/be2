@@ -39,6 +39,6 @@ func FromDomainClient(c domain.Client) ClientResponse {
 		ID:            c.Id.String(),
 		ClientName:    c.ClientName,
 		ClientSurname: c.ClientSurname,
-		Address:       FromDomainAdress(c.Address),
+		Address:       FromDomain(c.Address),
 	}
 }

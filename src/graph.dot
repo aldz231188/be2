@@ -17,12 +17,12 @@ digraph {
 		"fx.DotGraph" [label=<fx.DotGraph>];
 	}
 	subgraph cluster_3 {
-		label = "be2/internal/infra/db/postgres";
+		label = "be2/internal/infra/db";
 		constructor_3 [shape=plaintext label="NewPGConfig"];
 		"db.Config" [label=<db.Config>];
 	}
 	subgraph cluster_4 {
-		label = "be2/internal/infra/db/postgres";
+		label = "be2/internal/infra/db";
 		constructor_4 [shape=plaintext label="NewPool"];
 		"*pgxpool.Pool" [label=<*pgxpool.Pool>];
 	}

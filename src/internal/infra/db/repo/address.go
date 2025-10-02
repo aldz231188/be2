@@ -1,16 +1,19 @@
-package db
+package repo
 
 import (
 	"be2/internal/domain"
-	// "be2/internal/infra/db/postgres"
 	"context"
+	"github.com/google/uuid"
 )
 
 // type UserRepo struct{ q *Queries }
 
-func (r *Repo) CreateAddress(ctx context.Context, c domain.Adress) error {
+func (r *Repo) CreateAddress(ctx context.Context, c domain.Address) error {
 	address := domaineToRow(c)
-	return r.q.AddAddress(ctx, address)
+	return r.q.CreateAddress(ctx, address)
+}
+func (r *Repo) DeleteAddress(ctx context.Context, id uuid.UUID) (int64, error) {
+	return r.q.DeleteAddress(ctx, id)
 }
 
 // реализация CustomerRepo

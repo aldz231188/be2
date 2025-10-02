@@ -4,7 +4,7 @@ import (
 	"be2/internal/app"
 	router "be2/internal/http"
 	"be2/internal/http/v1/handlers"
-	"be2/internal/infra/db/postgres"
+	"be2/internal/infra/db"
 	"go.uber.org/fx"
 	"os"
 )

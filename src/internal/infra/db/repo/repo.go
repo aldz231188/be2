@@ -1,4 +1,4 @@
-package db
+package repo
 
 import (
 	"be2/internal/domain"
