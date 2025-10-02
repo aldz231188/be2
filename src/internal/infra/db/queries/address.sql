@@ -1,7 +1,7 @@
--- name: CreateUser :one
-INSERT INTO client (id, client_name,client_surname,birthday,gender,address_id)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING registration_date;
+-- -- name: CreateUser :one
+-- INSERT INTO client (id, client_name,client_surname,birthday,gender,address_id)
+-- VALUES ($1, $2, $3, $4, $5, $6)
+-- RETURNING registration_date;
 -- name: AddAddress :exec
 INSERT INTO address (id, country,city,street)
 VALUES ($1, $2, $3, $4);

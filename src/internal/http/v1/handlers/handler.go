@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	// "be2/internal/app"
-	"be2/internal/domain"
+	"be2/internal/app"
+	// "be2/internal/domain"
 	"be2/internal/http/v1/dto"
 	"context"
 	"encoding/json"
@@ -11,10 +11,10 @@ import (
 )
 
 type Handler struct {
-	DS domain.Service
+	DS app.Service
 }
 
-func NewHandler(csi domain.Service) Handler {
+func NewHandler(csi app.Service) Handler {
 	return Handler{
 		DS: csi,
 	}
@@ -29,7 +29,7 @@ func NewHandler(csi domain.Service) Handler {
 // @Failure     404 {object} contracts.ErrorResponse
 // @Router      /clients/{id} [get]
 // @Security    BearerAuth
-func (h *Handler) HandleAddAddress(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) HandleCreateAddress(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
 	var addressRow dto.CreateAddressRequest
@@ -40,7 +40,7 @@ func (h *Handler) HandleAddAddress(w http.ResponseWriter, r *http.Request) {
 
 	address := addressRow.ToDomainAdress()
 
-	h.DS.AddAddress(ctx, address)
+	h.DS.CreateAddress(ctx, address)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode("ok")
 

@@ -1,11 +1,12 @@
 package dto
 
 import (
+	"be2/internal/app"
 	"be2/internal/domain"
 )
 
 type CreateAddressRequest struct {
-	Country string `json:"country"`
+	Country string `json:"country" validate:"required"`
 	City    string `json:"city"`
 	Street  string `json:"street"`
 }
@@ -17,8 +18,8 @@ type AddressResponse struct {
 	Street  string `json:"gender"`
 }
 
-func (r CreateAddressRequest) ToDomainAdress() *domain.Adress {
-	return &domain.Adress{
+func (r CreateAddressRequest) ToDomainAdress() app.CreateInput {
+	return app.CreateInput{
 		Country: r.Country,
 		City:    r.City,
 		Street:  r.Street,

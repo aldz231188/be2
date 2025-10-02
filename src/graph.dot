@@ -29,21 +29,21 @@ digraph {
 	constructor_4 -> "fx.Lifecycle" [ltail=cluster_4];
 	constructor_4 -> "db.Config" [ltail=cluster_4];
 	subgraph cluster_5 {
-		label = "be2/internal/infra/db/postgres";
-		constructor_5 [shape=plaintext label="NewUserRepo"];
-		"domain.Repo" [label=<domain.Repo>];
+		label = "reflect";
+		constructor_5 [shape=plaintext label="makeFuncStub"];
+		"domain.AddressRepo" [label=<domain.AddressRepo>];
 	}
 	constructor_5 -> "*pgxpool.Pool" [ltail=cluster_5];
 	subgraph cluster_6 {
 		label = "be2/internal/app";
-		constructor_6 [shape=plaintext label="NewClientServiceImpl"];
-		"domain.Service" [label=<domain.Service>];
+		constructor_6 [shape=plaintext label="NewServiceImpl"];
+		"app.Service" [label=<app.Service>];
 	}
-	constructor_6 -> "domain.Repo" [ltail=cluster_6];
+	constructor_6 -> "domain.AddressRepo" [ltail=cluster_6];
 	subgraph cluster_7 {
 		label = "be2/internal/http/v1/handlers";
 		constructor_7 [shape=plaintext label="NewHandler"];
 		"handlers.Handler" [label=<handlers.Handler>];
 	}
-	constructor_7 -> "domain.Service" [ltail=cluster_7];
+	constructor_7 -> "app.Service" [ltail=cluster_7];
 }

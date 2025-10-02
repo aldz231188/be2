@@ -2,11 +2,11 @@ package db
 
 import (
 	"be2/internal/domain"
-	sqlc "be2/internal/infra/db/sqlc_generated"
+	store "be2/internal/infra/db/sqlc_generated"
 )
 
-func domaineToRow(address *domain.Adress) *sqlc.AddAddressParams {
-	return &sqlc.AddAddressParams{
+func domaineToRow(address domain.Adress) store.AddAddressParams {
+	return store.AddAddressParams{
 		ID:      address.Id,
 		Country: address.Country,
 		City:    address.City,

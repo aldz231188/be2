@@ -13,7 +13,7 @@ import (
 
 func RegisterRoutes(lc fx.Lifecycle, h handlers.Handler) {
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /addaddress", h.HandleAddAddress)
+	mux.HandleFunc("POST /addaddress", h.HandleCreateAddress)
 	mux.HandleFunc("/swagger/", httpSwagger.WrapHandler) // /swagger/index.html
 
 	server := &http.Server{

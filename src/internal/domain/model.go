@@ -21,7 +21,7 @@ type Client struct {
 	Birthday         time.Time
 	Gender           Gender
 	RegistrationDate time.Time
-	Address          *Adress
+	Address          Adress
 }
 
 type Adress struct {

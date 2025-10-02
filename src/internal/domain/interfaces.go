@@ -1,17 +1,14 @@
 package domain
 
-import "context"
+import (
+	"context"
+)
 
-type Service interface {
-	AddAddress(ctx context.Context, c *Adress) error
-	// SaveAdress(c *Adress) error
+// internal/domain/repo.go
+type AddressRepo interface {
+	CreateAddress(ctx context.Context, a Adress) error
 }
-
-type Repo interface {
-	AddAddress(ctx context.Context, c *Adress) error
-	// SaveAdress(c *Adress) error
+type ClientRepo interface {
+	CreateClient(ctx context.Context, c Client) error
+	// GetClient(ctx context.Context, id uuid.UUID) (*Client, error)
 }
-
-// type AdressRepo interface {
-
-// }
