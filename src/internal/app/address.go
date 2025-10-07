@@ -9,45 +9,66 @@ import (
 	// "time"
 )
 
-type CreateInput struct {
+type CreateAddressInput struct {
+	Country string
+	City    string
+	Street  string
+}
+type UpdateInput struct {
+	ID      uuid.UUID
 	Country string
 	City    string
 	Street  string
 }
 
-type Service interface {
-	CreateAddress(ctx context.Context, c CreateInput) (uuid.UUID, error)
+type AddressService interface {
+	CreateAddress(ctx context.Context, c CreateAddressInput) (uuid.UUID, error)
 	DeleteAddress(ctx context.Context, id uuid.UUID) (int64, error)
+	UpdateAddress(ctx context.Context, u UpdateInput) (int64, error)
 }
 
-var _ Service = (*ServiceImpl)(nil) // гарантирует, что *ServiceImpl реализует Service
+var _ AddressService = (*ServiceImpl)(nil) // гарантирует, что *ServiceImpl реализует AddressService
+var _ ClientService = (*ServiceImpl)(nil)  // гарантирует, что *ServiceImpl реализует AddressService
 
 type ServiceImpl struct { //вынести
-	repo domain.AddressRepo
+	addressrepo domain.AddressRepo
+	clientrepo  domain.ClientRepo
 }
 
-func NewServiceImpl(r domain.AddressRepo) Service { //вынести
-	return &ServiceImpl{repo: r}
+func NewServiceImpl(a domain.AddressRepo, c domain.ClientRepo) AddressService { //вынести
+	return &ServiceImpl{
+		addressrepo: a,
+		clientrepo:  c,
+	}
 }
 
-func (si *ServiceImpl) CreateAddress(ctx context.Context, c CreateInput) (uuid.UUID, error) {
+func (si *ServiceImpl) CreateAddress(ctx context.Context, c CreateAddressInput) (uuid.UUID, error) {
 	address := domain.Address{
-		Id:      uuid.New(),
+		ID:      uuid.New(),
 		Country: c.Country,
 		City:    c.City,
 		Street:  c.Street,
 	}
 
-	if err := si.repo.CreateAddress(ctx, address); err != nil {
+	if err := si.addressrepo.CreateAddress(ctx, address); err != nil {
 		return uuid.Nil, err
 	}
 
-	return address.Id, nil
+	return address.ID, nil
 
 }
 
 func (si *ServiceImpl) DeleteAddress(ctx context.Context, id uuid.UUID) (int64, error) {
-	return si.repo.DeleteAddress(ctx, id)
+	return si.addressrepo.DeleteAddress(ctx, id)
+}
+func (si *ServiceImpl) UpdateAddress(ctx context.Context, u UpdateInput) (int64, error) {
+	address := domain.Address{
+		ID:      u.ID,
+		Country: u.Country,
+		City:    u.City,
+		Street:  u.Street,
+	}
+	return si.addressrepo.UpdateAddress(ctx, address)
 }
 
 // func NormalizeDate(d time.Time) time.Time {

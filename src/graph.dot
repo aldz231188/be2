@@ -32,6 +32,7 @@ digraph {
 		label = "reflect";
 		constructor_5 [shape=plaintext label="makeFuncStub"];
 		"domain.AddressRepo" [label=<domain.AddressRepo>];
+		"domain.ClientRepo" [label=<domain.ClientRepo>];
 	}
 	constructor_5 -> "*pgxpool.Pool" [ltail=cluster_5];
 	subgraph cluster_6 {
@@ -40,6 +41,7 @@ digraph {
 		"app.Service" [label=<app.Service>];
 	}
 	constructor_6 -> "domain.AddressRepo" [ltail=cluster_6];
+	constructor_6 -> "domain.ClientRepo" [ltail=cluster_6];
 	subgraph cluster_7 {
 		label = "be2/internal/http/v1/handlers";
 		constructor_7 [shape=plaintext label="NewHandler"];

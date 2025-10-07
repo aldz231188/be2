@@ -11,12 +11,14 @@ import (
 )
 
 type Handler struct {
-	DS app.Service
+	AS app.AddressService
+	CS app.ClientService
 }
 
-func NewHandler(csi app.Service) Handler {
+func NewHandler(asi app.AddressService, csi app.ClientService) Handler {
 	return Handler{
-		DS: csi,
+		AS: asi,
+		CS: csi,
 	}
 }
 
@@ -29,40 +31,44 @@ func NewHandler(csi app.Service) Handler {
 // @Failure     404 {object} contracts.ErrorResponse
 // @Router      /clients/{id} [get]
 // @Security    BearerAuth
-func (h *Handler) HandleCreateAddress(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) HandleCreateClient(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
-	var addressRow dto.CreateAddressRequest
+	var clientRow dto.CreateClientRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&addressRow); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&clientRow); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	address := addressRow.ToDomain()
+	address, err := clientRow.ToDomainAddressClient()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 
-	h.DS.CreateAddress(ctx, address)
+	h.CS.CreateClient(ctx, address)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode("ok")
 
 }
-func (h *Handler) HandleDeleteAddress(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
-	defer cancel()
-	var addressId dto.UUIDRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&addressId); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	var mess string
-	if id, err := addressId.ToDomain(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	} else if _, err := h.DS.DeleteAddress(ctx, id); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	} else {
-		mess = "-1"
-	}
+// func (h *Handler) HandleDeleteAddress(w http.ResponseWriter, r *http.Request) {
+// 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+// 	defer cancel()
+// 	var addressId dto.UUIDRequest
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode("ok" + mess)
+// 	if err := json.NewDecoder(r.Body).Decode(&addressId); err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 	}
+// 	var mess string
+// 	if id, err := addressId.ToDomain(); err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 	} else if _, err := h.DS.DeleteAddress(ctx, id); err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 	} else {
+// 		mess = "-1"
+// 	}
 
-}
+// 	w.Header().Set("Content-Type", "application/json")
+// 	json.NewEncoder(w).Encode("ok" + mess)
+
+// }

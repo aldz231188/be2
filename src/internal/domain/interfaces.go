@@ -10,8 +10,10 @@ import (
 type AddressRepo interface {
 	CreateAddress(ctx context.Context, a Address) error
 	DeleteAddress(ctx context.Context, id uuid.UUID) (int64, error)
+	UpdateAddress(ctx context.Context, a Address) (int64, error)
 }
 type ClientRepo interface {
-	CreateClient(ctx context.Context, c Client) error
-	// GetClient(ctx context.Context, id uuid.UUID) (*Client, error)
+	CreateClient(ctx context.Context, a Client) error
+	// Deleteclient(ctx context.Context, id uuid.UUID) (int64, error)
+	// Updateclient(ctx context.Context, a Address) (int64, error)
 }

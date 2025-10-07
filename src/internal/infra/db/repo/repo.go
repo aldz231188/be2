@@ -9,6 +9,11 @@ import (
 
 type Repo struct{ q *store.Queries }
 
-var _ domain.AddressRepo = (*Repo)(nil)
+var (
+	_ domain.AddressRepo = (*Repo)(nil)
+	_ domain.ClientRepo  = (*Repo)(nil)
+
+// _ domain.SupplierRepo = (*Repo)(nil)
+)
 
 func NewRepo(pool *pgxpool.Pool) *Repo { return &Repo{q: store.New(pool)} }

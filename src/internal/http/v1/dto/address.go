@@ -18,15 +18,15 @@ type AddressResponse struct {
 	Street  string `json:"gender"`
 }
 
-func (r CreateAddressRequest) ToDomain() app.CreateInput {
-	return app.CreateInput{
+func (r CreateAddressRequest) ToDomainAddress() app.CreateAddressInput {
+	return app.CreateAddressInput{
 		Country: r.Country,
 		City:    r.City,
 		Street:  r.Street,
 	}
 }
 
-func FromDomain(c domain.Address) AddressResponse {
+func FromDomainAddress(c domain.Address) AddressResponse {
 	return AddressResponse{
 		Country: c.Country,
 		City:    c.City,

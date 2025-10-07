@@ -8,12 +8,23 @@ import (
 
 // type UserRepo struct{ q *Queries }
 
+type UpdateAddressParams struct {
+	ID      uuid.UUID
+	Country interface{}
+	City    interface{}
+	Street  interface{}
+}
+
 func (r *Repo) CreateAddress(ctx context.Context, c domain.Address) error {
-	address := domaineToRow(c)
+	address := createAddressToRow(c)
 	return r.q.CreateAddress(ctx, address)
 }
 func (r *Repo) DeleteAddress(ctx context.Context, id uuid.UUID) (int64, error) {
 	return r.q.DeleteAddress(ctx, id)
+}
+func (r *Repo) UpdateAddress(ctx context.Context, c domain.Address) (int64, error) {
+	address := updateAddressToRow(c)
+	return r.q.UpdateAddress(ctx, address)
 }
 
 // реализация CustomerRepo

@@ -13,7 +13,7 @@ var Module = fx.Options(
 		fx.Annotate(
 			repo.NewRepo,
 			fx.As(new(domain.AddressRepo)),
-			// fx.As(new(domain.CustomerRepo)),
+			fx.As(new(domain.ClientRepo)),
 			// fx.As(new(domain.SupplierRepo)),
 		),
 	), fx.Invoke(),
