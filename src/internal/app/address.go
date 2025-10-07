@@ -28,14 +28,14 @@ type AddressService interface {
 }
 
 var _ AddressService = (*ServiceImpl)(nil) // гарантирует, что *ServiceImpl реализует AddressService
-var _ ClientService = (*ServiceImpl)(nil)  // гарантирует, что *ServiceImpl реализует AddressService
+var _ ClientService = (*ServiceImpl)(nil)  // гарантирует, что *ServiceImpl реализует ClientService
 
 type ServiceImpl struct { //вынести
 	addressrepo domain.AddressRepo
 	clientrepo  domain.ClientRepo
 }
 
-func NewServiceImpl(a domain.AddressRepo, c domain.ClientRepo) AddressService { //вынести
+func NewServiceImpl(a domain.AddressRepo, c domain.ClientRepo) *ServiceImpl { //вынести
 	return &ServiceImpl{
 		addressrepo: a,
 		clientrepo:  c,

@@ -11,7 +11,13 @@ import (
 
 var App = fx.Options(
 	db.Module,
-	fx.Provide(app.NewServiceImpl),
+	fx.Provide(
+		fx.Annotate(
+			app.NewServiceImpl,
+			fx.As(new(app.AddressService)),
+			fx.As(new(app.ClientService)),
+		),
+	),
 	fx.Provide(handlers.NewHandler),
 	fx.Invoke(router.RegisterRoutes),
 	fx.Invoke(func(g fx.DotGraph) {
