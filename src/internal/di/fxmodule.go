@@ -13,8 +13,11 @@ var App = fx.Options(
 	db.Module,
 	fx.Provide(
 		fx.Annotate(
-			app.NewServiceImpl,
+			app.NewAddressService,
 			fx.As(new(app.AddressService)),
+		),
+		fx.Annotate(
+			app.NewClientService,
 			fx.As(new(app.ClientService)),
 		),
 	),
