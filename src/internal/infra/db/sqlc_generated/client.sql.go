@@ -10,18 +10,17 @@ import (
 	"time"
 
 	uuid "github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createClient = `-- name: CreateClient :exec
 INSERT INTO public.client (id,client_name, client_surname, birthday, gender, address_id)
 VALUES (
-  $1,
-  $2,                     -- client_name
-  $3,                     -- client_surname
-  $4,                     -- birthday (date, CHECK birthday <= CURRENT_DATE)
-  COALESCE($5, 'unknown')::public.gender_t,  -- gender (nullable param -> default 'unknown')
-  $6                      -- address_id (nullable)
+    $1,
+  $2,
+  $3,
+  $4,
+  COALESCE($5::public.gender_t, 'unknown'::public.gender_t),
+  $6
 )
 `
 
@@ -30,8 +29,8 @@ type CreateClientParams struct {
 	ClientName    interface{}
 	ClientSurname interface{}
 	Birthday      time.Time
-	Column5       GenderT
-	AddressID     pgtype.UUID
+	Gender        GenderT
+	AddressID     uuid.UUID
 }
 
 func (q *Queries) CreateClient(ctx context.Context, arg CreateClientParams) error {
@@ -40,7 +39,7 @@ func (q *Queries) CreateClient(ctx context.Context, arg CreateClientParams) erro
 		arg.ClientName,
 		arg.ClientSurname,
 		arg.Birthday,
-		arg.Column5,
+		arg.Gender,
 		arg.AddressID,
 	)
 	return err
@@ -75,7 +74,7 @@ type UpdateClientParams struct {
 	ClientSurname interface{}
 	Birthday      time.Time
 	Gender        GenderT
-	AddressID     pgtype.UUID
+	AddressID     uuid.UUID
 }
 
 func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) (int64, error) {

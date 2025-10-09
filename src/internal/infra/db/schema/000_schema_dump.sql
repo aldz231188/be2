@@ -56,6 +56,17 @@ CREATE TYPE public.gender_t AS ENUM (
 );
 
 
+--
+-- Name: gender_t_v2; Type: TYPE; Schema: public; Owner: -
+--
+
+CREATE TYPE public.gender_t_v2 AS ENUM (
+    'male',
+    'female',
+    'unknown'
+);
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -83,7 +94,7 @@ CREATE TABLE public.client (
     birthday date NOT NULL,
     gender public.gender_t DEFAULT 'unknown'::public.gender_t NOT NULL,
     registration_date timestamp with time zone DEFAULT now() NOT NULL,
-    address_id uuid,
+    address_id uuid NOT NULL,
     CONSTRAINT client_birthday_check CHECK ((birthday <= CURRENT_DATE))
 );
 

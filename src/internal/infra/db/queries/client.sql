@@ -1,13 +1,14 @@
 -- name: CreateClient :exec
 INSERT INTO public.client (id,client_name, client_surname, birthday, gender, address_id)
 VALUES (
-  $1,
-  $2,                     -- client_name
-  $3,                     -- client_surname
-  $4,                     -- birthday (date, CHECK birthday <= CURRENT_DATE)
-  COALESCE($5, 'unknown')::public.gender_t,  -- gender (nullable param -> default 'unknown')
-  $6                      -- address_id (nullable)
-);
+    sqlc.arg(id),
+  sqlc.arg(client_name),
+  sqlc.arg(client_surname),
+  sqlc.arg(birthday),
+  COALESCE(sqlc.arg(gender)::public.gender_t, 'unknown'::public.gender_t),
+  sqlc.arg(address_id)
+);;
+
 
 -- name: UpdateClient :execrows
 UPDATE public.client

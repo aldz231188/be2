@@ -23,3 +23,5 @@ sql:
             go_type:
               import: "time"
               type: "Time"
+          - db_type: "citext"
+            go_type: "string"

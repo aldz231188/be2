@@ -36,9 +36,10 @@ digraph {
 	}
 	constructor_5 -> "*pgxpool.Pool" [ltail=cluster_5];
 	subgraph cluster_6 {
-		label = "be2/internal/app";
-		constructor_6 [shape=plaintext label="NewServiceImpl"];
-		"app.Service" [label=<app.Service>];
+		label = "reflect";
+		constructor_6 [shape=plaintext label="makeFuncStub"];
+		"app.AddressService" [label=<app.AddressService>];
+		"app.ClientService" [label=<app.ClientService>];
 	}
 	constructor_6 -> "domain.AddressRepo" [ltail=cluster_6];
 	constructor_6 -> "domain.ClientRepo" [ltail=cluster_6];
@@ -47,5 +48,6 @@ digraph {
 		constructor_7 [shape=plaintext label="NewHandler"];
 		"handlers.Handler" [label=<handlers.Handler>];
 	}
-	constructor_7 -> "app.Service" [ltail=cluster_7];
+	constructor_7 -> "app.AddressService" [ltail=cluster_7];
+	constructor_7 -> "app.ClientService" [ltail=cluster_7];
 }

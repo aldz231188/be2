@@ -57,6 +57,49 @@ func (ns NullGenderT) Value() (driver.Value, error) {
 	return string(ns.GenderT), nil
 }
 
+type GenderTV2 string
+
+const (
+	GenderTV2Male    GenderTV2 = "male"
+	GenderTV2Female  GenderTV2 = "female"
+	GenderTV2Unknown GenderTV2 = "unknown"
+)
+
+func (e *GenderTV2) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = GenderTV2(s)
+	case string:
+		*e = GenderTV2(s)
+	default:
+		return fmt.Errorf("unsupported scan type for GenderTV2: %T", src)
+	}
+	return nil
+}
+
+type NullGenderTV2 struct {
+	GenderTV2 GenderTV2
+	Valid     bool // Valid is true if GenderTV2 is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullGenderTV2) Scan(value interface{}) error {
+	if value == nil {
+		ns.GenderTV2, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.GenderTV2.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullGenderTV2) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.GenderTV2), nil
+}
+
 type Address struct {
 	ID      uuid.UUID
 	Country interface{}
@@ -71,7 +114,7 @@ type Client struct {
 	Birthday         time.Time
 	Gender           GenderT
 	RegistrationDate pgtype.Timestamptz
-	AddressID        pgtype.UUID
+	AddressID        uuid.UUID
 }
 
 type Image struct {

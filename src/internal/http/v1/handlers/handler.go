@@ -40,12 +40,14 @@ func (h *Handler) HandleCreateClient(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	address, err := clientRow.ToDomainAddressClient()
+	client, err := clientRow.ToDomainAddressClient()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
-	h.CS.CreateClient(ctx, address)
+	if _, err := h.CS.CreateClient(ctx, client); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode("ok")
 
