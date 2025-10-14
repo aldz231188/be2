@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # --- build stage ---
-FROM golang:1.22.4 AS build
+FROM golang:1.24.0 AS build
 WORKDIR /src
 
 COPY go.mod go.sum ./
