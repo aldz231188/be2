@@ -53,24 +53,24 @@ func (h *Handler) HandleCreateClient(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// func (h *Handler) HandleDeleteAddress(w http.ResponseWriter, r *http.Request) {
-// 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
-// 	defer cancel()
-// 	var addressId dto.UUIDRequest
+func (h *Handler) HandleDeleteClient(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+	var clientId dto.UUIDRequest
 
-// 	if err := json.NewDecoder(r.Body).Decode(&addressId); err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 	}
-// 	var mess string
-// 	if id, err := addressId.ToDomain(); err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 	} else if _, err := h.DS.DeleteAddress(ctx, id); err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 	} else {
-// 		mess = "-1"
-// 	}
+	if err := json.NewDecoder(r.Body).Decode(&clientId); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	var mess string
+	if id, err := clientId.ToDomain(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	} else if _, err := h.CS.DeleteClient(ctx, id); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	} else {
+		mess = "-1"
+	}
 
-// 	w.Header().Set("Content-Type", "application/json")
-// 	json.NewEncoder(w).Encode("ok" + mess)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode("ok" + mess)
 
-// }
+}

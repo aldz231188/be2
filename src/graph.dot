@@ -39,15 +39,20 @@ digraph {
 		label = "reflect";
 		constructor_6 [shape=plaintext label="makeFuncStub"];
 		"app.AddressService" [label=<app.AddressService>];
-		"app.ClientService" [label=<app.ClientService>];
 	}
 	constructor_6 -> "domain.AddressRepo" [ltail=cluster_6];
-	constructor_6 -> "domain.ClientRepo" [ltail=cluster_6];
 	subgraph cluster_7 {
+		label = "reflect";
+		constructor_7 [shape=plaintext label="makeFuncStub"];
+		"app.ClientService" [label=<app.ClientService>];
+	}
+	constructor_7 -> "domain.ClientRepo" [ltail=cluster_7];
+	constructor_7 -> "app.AddressService" [ltail=cluster_7];
+	subgraph cluster_8 {
 		label = "be2/internal/http/v1/handlers";
-		constructor_7 [shape=plaintext label="NewHandler"];
+		constructor_8 [shape=plaintext label="NewHandler"];
 		"handlers.Handler" [label=<handlers.Handler>];
 	}
-	constructor_7 -> "app.AddressService" [ltail=cluster_7];
-	constructor_7 -> "app.ClientService" [ltail=cluster_7];
+	constructor_8 -> "app.AddressService" [ltail=cluster_8];
+	constructor_8 -> "app.ClientService" [ltail=cluster_8];
 }

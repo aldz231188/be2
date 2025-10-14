@@ -20,6 +20,7 @@ type CreateClientInput struct {
 
 type ClientService interface {
 	CreateClient(ctx context.Context, c CreateClientInput) (uuid.UUID, error)
+	DeleteClient(ctx context.Context, id uuid.UUID) (int64, error)
 }
 
 type clientService struct {
@@ -57,4 +58,11 @@ func (s *clientService) CreateClient(ctx context.Context, c CreateClientInput) (
 	}
 
 	return client.ID, nil
+}
+
+func (s *clientService) DeleteClient(ctx context.Context, id uuid.UUID) (int64, error) {
+	// if _, err := s.addressService.DeleteAddress(ctx); err != nil {
+	// 	return
+	// }
+	return s.clientRepo.DeleteClient(ctx, id)
 }

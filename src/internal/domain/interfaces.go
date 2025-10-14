@@ -14,6 +14,6 @@ type AddressRepo interface {
 }
 type ClientRepo interface {
 	CreateClient(ctx context.Context, a Client) error
-	// Deleteclient(ctx context.Context, id uuid.UUID) (int64, error)
-	// Updateclient(ctx context.Context, a Address) (int64, error)
+	DeleteClient(ctx context.Context, id uuid.UUID) (int64, error)
+	// UpdateClient(ctx context.Context, a Address) (int64, error)
 }
