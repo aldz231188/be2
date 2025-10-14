@@ -18,9 +18,9 @@ VALUES ($1, $2, $3, $4)
 
 type CreateAddressParams struct {
 	ID      uuid.UUID
-	Country interface{}
-	City    interface{}
-	Street  interface{}
+	Country string
+	City    string
+	Street  string
 }
 
 func (q *Queries) CreateAddress(ctx context.Context, arg CreateAddressParams) error {
@@ -56,9 +56,9 @@ WHERE id = $1
 
 type UpdateAddressParams struct {
 	ID      uuid.UUID
-	Country interface{}
-	City    interface{}
-	Street  interface{}
+	Country string
+	City    string
+	Street  string
 }
 
 func (q *Queries) UpdateAddress(ctx context.Context, arg UpdateAddressParams) (int64, error) {

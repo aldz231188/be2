@@ -5,137 +5,25 @@
 package sqlc_generated
 
 import (
-	"database/sql/driver"
-	"fmt"
 	"time"
 
 	uuid "github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type GenderT string
-
-const (
-	GenderTMale    GenderT = "male"
-	GenderTFemale  GenderT = "female"
-	GenderTOther   GenderT = "other"
-	GenderTUnknown GenderT = "unknown"
-)
-
-func (e *GenderT) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = GenderT(s)
-	case string:
-		*e = GenderT(s)
-	default:
-		return fmt.Errorf("unsupported scan type for GenderT: %T", src)
-	}
-	return nil
-}
-
-type NullGenderT struct {
-	GenderT GenderT
-	Valid   bool // Valid is true if GenderT is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullGenderT) Scan(value interface{}) error {
-	if value == nil {
-		ns.GenderT, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.GenderT.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullGenderT) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.GenderT), nil
-}
-
-type GenderTV2 string
-
-const (
-	GenderTV2Male    GenderTV2 = "male"
-	GenderTV2Female  GenderTV2 = "female"
-	GenderTV2Unknown GenderTV2 = "unknown"
-)
-
-func (e *GenderTV2) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = GenderTV2(s)
-	case string:
-		*e = GenderTV2(s)
-	default:
-		return fmt.Errorf("unsupported scan type for GenderTV2: %T", src)
-	}
-	return nil
-}
-
-type NullGenderTV2 struct {
-	GenderTV2 GenderTV2
-	Valid     bool // Valid is true if GenderTV2 is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullGenderTV2) Scan(value interface{}) error {
-	if value == nil {
-		ns.GenderTV2, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.GenderTV2.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullGenderTV2) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.GenderTV2), nil
-}
-
 type Address struct {
 	ID      uuid.UUID
-	Country interface{}
-	City    interface{}
-	Street  interface{}
+	Country string
+	City    string
+	Street  string
 }
 
 type Client struct {
 	ID               uuid.UUID
-	ClientName       interface{}
-	ClientSurname    interface{}
+	ClientName       string
+	ClientSurname    string
 	Birthday         time.Time
-	Gender           GenderT
+	Gender           string
 	RegistrationDate pgtype.Timestamptz
 	AddressID        uuid.UUID
-}
-
-type Image struct {
-	ID    uuid.UUID
-	Image []byte
-}
-
-type Product struct {
-	ID             uuid.UUID
-	Name           interface{}
-	Category       interface{}
-	Price          pgtype.Numeric
-	AvailableStock int32
-	LastUpdateDate pgtype.Timestamptz
-	SupplierID     pgtype.UUID
-	ImageID        pgtype.UUID
-}
-
-type Supplier struct {
-	ID          uuid.UUID
-	Name        interface{}
-	AddressID   pgtype.UUID
-	PhoneNumber string
 }

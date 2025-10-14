@@ -10,9 +10,9 @@ import (
 
 type UpdateAddressParams struct {
 	ID      uuid.UUID
-	Country interface{}
-	City    interface{}
-	Street  interface{}
+	Country string
+	City    string
+	Street  string
 }
 
 func (r *Repo) CreateAddress(ctx context.Context, c domain.Address) error {

@@ -23,12 +23,19 @@ func updateAddressToRow(address domain.Address) store.UpdateAddressParams {
 }
 
 func createClientToRow(c domain.Client) store.CreateClientParams {
+	var gender string
+	switch c.Gender {
+	case domain.FEMALE:
+		gender = "female"
+	case domain.MALE:
+		gender = "male"
+	}
 	return store.CreateClientParams{
 		ID:            c.ID,
 		ClientName:    c.ClientName,
 		ClientSurname: c.ClientSurname,
 		Birthday:      c.Birthday,
-		Gender:        "male",
+		Gender:        gender,
 		AddressID:     c.Address,
 	}
 }

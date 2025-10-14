@@ -30,7 +30,6 @@ type ClientResponse struct {
 
 func (r CreateClientRequest) ToDomainAddressClient() (app.CreateClientInput, error) {
 
-	// gender:=domain.UNKNOWN
 	if gender, err := parseGender(r.Gender); err != nil {
 		return app.CreateClientInput{}, err
 	} else {
@@ -61,7 +60,7 @@ func parseGender(s string) (domain.Gender, error) {
 	case strings.EqualFold(s, "female"):
 		return domain.FEMALE, nil
 	default:
-		return domain.UNKNOWN, errors.New("incorrect gender")
+		return domain.MALE, errors.New("incorrect gender")
 
 	}
 

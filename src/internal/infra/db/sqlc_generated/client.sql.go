@@ -19,17 +19,17 @@ VALUES (
   $2,
   $3,
   $4,
-  COALESCE($5::public.gender_t, 'unknown'::public.gender_t),
+  $5,
   $6
 )
 `
 
 type CreateClientParams struct {
 	ID            uuid.UUID
-	ClientName    interface{}
-	ClientSurname interface{}
+	ClientName    string
+	ClientSurname string
 	Birthday      time.Time
-	Gender        GenderT
+	Gender        string
 	AddressID     uuid.UUID
 }
 
@@ -63,17 +63,17 @@ UPDATE public.client
 SET client_name   = $2,
     client_surname= $3,
     birthday      = $4,
-    gender        = COALESCE($5, gender), -- если не хочешь менять, передай NULL
+    gender        = $5,
     address_id    = $6
 WHERE id = $1
 `
 
 type UpdateClientParams struct {
 	ID            uuid.UUID
-	ClientName    interface{}
-	ClientSurname interface{}
+	ClientName    string
+	ClientSurname string
 	Birthday      time.Time
-	Gender        GenderT
+	Gender        string
 	AddressID     uuid.UUID
 }
 

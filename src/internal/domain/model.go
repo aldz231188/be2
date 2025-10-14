@@ -9,8 +9,7 @@ import (
 type Gender int
 
 const (
-	UNKNOWN Gender = iota
-	MALE
+	MALE Gender = iota
 	FEMALE
 )
 

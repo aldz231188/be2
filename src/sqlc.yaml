@@ -2,7 +2,7 @@ version: "2"
 sql:
   - engine: postgresql
     schema:
-      - internal/infra/db/schema
+      - internal/infra/db/migrations/*.up.sql
     queries:
       - internal/infra/db/queries
     gen:
@@ -23,5 +23,3 @@ sql:
             go_type:
               import: "time"
               type: "Time"
-          - db_type: "citext"
-            go_type: "string"

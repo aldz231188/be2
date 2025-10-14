@@ -12,13 +12,27 @@ services:
       retries: 10
     ports: ["5432:5432"]
 
+  migrator:
+    image: migrate/migrate:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://app:app@db:5432/app?sslmode=disable",
+      "up"
+    ]
+    volumes:
+      - ./internal/infra/db/migrations:/migrations:ro
+    restart: "on-failure"
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      db:
-        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
     environment:
       DATABASE_DSN: postgres://app:app@db:5432/app?sslmode=disable
       HTTP_ADDR: :8080
