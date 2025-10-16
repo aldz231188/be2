@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Минималистичный клиент BE2</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: "Segoe UI", Roboto, sans-serif;
+        --accent: #2563eb;
+        --accent-dark: #1d4ed8;
+        --border: rgba(0, 0, 0, 0.15);
+        --bg: rgba(255, 255, 255, 0.85);
+        --error: #dc2626;
+        --success: #16a34a;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        padding: 24px;
+      }
+
+      main {
+        width: min(960px, 100%);
+        background: var(--bg);
+        backdrop-filter: blur(14px);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 32px;
+        box-shadow: 0 22px 45px rgba(15, 23, 42, 0.35);
+      }
+
+      h1 {
+        margin-top: 0;
+        font-size: clamp(1.8rem, 2.6vw, 2.4rem);
+        text-align: center;
+      }
+
+      p.lead {
+        margin: 0 auto 32px;
+        max-width: 600px;
+        text-align: center;
+        line-height: 1.6;
+      }
+
+      section {
+        display: grid;
+        gap: 32px;
+      }
+
+      form {
+        display: grid;
+        gap: 12px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.6);
+      }
+
+      fieldset {
+        border: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 12px;
+      }
+
+      legend {
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        font-size: 0.95rem;
+      }
+
+      input,
+      select,
+      button {
+        font: inherit;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+
+      button {
+        background: var(--accent);
+        color: white;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        font-weight: 600;
+      }
+
+      button:hover {
+        background: var(--accent-dark);
+      }
+
+      .status {
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+
+      .status.success {
+        color: var(--success);
+      }
+
+      .status.error {
+        color: var(--error);
+      }
+
+      @media (max-width: 720px) {
+        form {
+          padding: 20px;
+        }
+
+        section {
+          gap: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Минималистичный фронтенд без фреймворков</h1>
+      <p class="lead">
+        Эта страница показывает, как можно работать с API бэкенда из чистых
+        HTML/CSS и пары строк JavaScript. Укажите URL сервиса и воспользуйтесь
+        формами для создания или удаления клиента.
+      </p>
+
+      <section>
+        <label>
+          URL бэкенда
+          <input
+            id="base-url"
+            type="url"
+            placeholder="http://localhost:8080"
+            value="http://localhost:8080"
+            required
+          />
+        </label>
+
+        <form id="create-client">
+          <h2>Создать клиента</h2>
+          <fieldset>
+            <legend>Данные клиента</legend>
+            <label>
+              Имя
+              <input name="first_name" required />
+            </label>
+            <label>
+              Фамилия
+              <input name="last_name" required />
+            </label>
+            <label>
+              Дата рождения
+              <input name="birth_date" type="date" required />
+            </label>
+            <label>
+              Пол
+              <select name="gender" required>
+                <option value="male">Мужской</option>
+                <option value="female">Женский</option>
+              </select>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Адрес</legend>
+            <label>
+              Страна
+              <input name="country" required />
+            </label>
+            <label>
+              Город
+              <input name="city" required />
+            </label>
+            <label>
+              Улица
+              <input name="street" required />
+            </label>
+          </fieldset>
+
+          <button type="submit">Отправить</button>
+          <p class="status" id="create-status"></p>
+        </form>
+
+        <form id="delete-client">
+          <h2>Удалить клиента</h2>
+          <label>
+            UUID клиента
+            <input name="client_id" placeholder="550e8400-e29b-41d4-a716-446655440000" required />
+          </label>
+          <button type="submit">Удалить</button>
+          <p class="status" id="delete-status"></p>
+        </form>
+      </section>
+    </main>
+
+    <script>
+      const baseUrlInput = document.getElementById("base-url");
+      const createForm = document.getElementById("create-client");
+      const deleteForm = document.getElementById("delete-client");
+      const createStatus = document.getElementById("create-status");
+      const deleteStatus = document.getElementById("delete-status");
+
+      function setStatus(el, message, type) {
+        el.textContent = message;
+        el.className = `status ${type}`;
+      }
+
+      async function sendRequest(endpoint, payload, statusEl) {
+        setStatus(statusEl, "Отправка...", "");
+        try {
+          const response = await fetch(`${baseUrlInput.value}${endpoint}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          const text = await response.text();
+          if (!response.ok) {
+            throw new Error(text || response.statusText);
+          }
+
+          setStatus(statusEl, text || "Успешно", "success");
+          return text;
+        } catch (error) {
+          setStatus(statusEl, error.message || "Ошибка", "error");
+          throw error;
+        }
+      }
+
+      createForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const data = new FormData(createForm);
+
+        const payload = {
+          first_name: data.get("first_name"),
+          last_name: data.get("last_name"),
+          birth_date: data.get("birth_date"),
+          gender: data.get("gender"),
+          address: {
+            country: data.get("country"),
+            city: data.get("city"),
+            street: data.get("street"),
+          },
+        };
+
+        try {
+          await sendRequest("/createclient", payload, createStatus);
+          createForm.reset();
+        } catch (error) {
+          console.error(error);
+        }
+      });
+
+      deleteForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const data = new FormData(deleteForm);
+
+        const payload = {
+          client_id: data.get("client_id"),
+        };
+
+        try {
+          await sendRequest("/deleteclient", payload, deleteStatus);
+          deleteForm.reset();
+        } catch (error) {
+          console.error(error);
+        }
+      });
+    </script>
+  </body>
+</html>
