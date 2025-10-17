@@ -1,19 +1,20 @@
 # syntax=docker/dockerfile:1.7
 
-# --- build stage ---
-FROM golang:1.24.0 AS build
+FROM golang:1.24 AS build
 WORKDIR /src
 
 COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/app ./cmd/server
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -trimpath -ldflags="-s -w" -o /out/app ./cmd/server
 
-# --- run stage ---
-FROM gcr.io/distroless/base-debian12
+FROM gcr.io/distroless/static-debian12
 ENV APP_ENV=prod
-COPY --from=build /out/app /app
-EXPOSE 8080
+COPY --from=build --chown=nonroot:nonroot /out/app /app
 USER nonroot:nonroot
+EXPOSE 8080
 ENTRYPOINT ["/app"]
