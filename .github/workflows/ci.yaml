@@ -5,7 +5,7 @@ on:
     paths:
       - "cmd/**"
       - "internal/**"
-      - "infra/**"
+      - "infra/db/**"
       - "go.mod"
       - "go.sum"
       - ".github/workflows/**"
