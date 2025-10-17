@@ -73,7 +73,7 @@ jobs:
 
       - name: Run DB migrations
         run: |
-          migrate -path infra/migrations -database "$DATABASE_URL" up
+          migrate -path ./internal/infra/db/migrations -database "$DATABASE_URL" up
 
       - name: Build
         run: go build ./...
