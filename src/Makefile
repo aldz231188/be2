@@ -2,8 +2,27 @@ SHELL := /bin/bash
 APP := app
 BIN := ./bin/$(APP)
 
+DB_URL=postgres://app:app@localhost:5432/app?sslmode=disable
+MIGR_DIR=./internal/infra/db/migrations
 
-.PHONY: tidy build run sqlc migrate-up migrate-down lint test up down
+.PHONY: tidy build run sqlc lint test up down
+.PHONY: migrate-create migrate-up migrate-down migrate-version
+
+migrate-create:
+	@test -n "$(name)" || (echo "Usage: make migrate-create name=add_table"; exit 1)
+	migrate create -ext sql -dir $(MIGR_DIR) -format 20060102150405 $(name)
+
+migrate-up:
+	migrate -path $(MIGR_DIR) -database "$(DB_URL)" up
+
+migrate-down:
+	migrate -path $(MIGR_DIR) -database "$(DB_URL)" down 1
+
+migrate-version:
+	migrate -path $(MIGR_DIR) -database "$(DB_URL)" version
+
+
+
 
 
 tidy:
@@ -21,15 +40,6 @@ run:
 
 sqlc:
 	sqlc generate
-
-
-migrate-up:
-	migrate -path internal/infra/db/migrations -database $$DATABASE_DSN up
-
-
-migrate-down:
-	migrate -path internal/infra/db/migrations -database $$DATABASE_DSN down 1
-
 
 lint:
 	golangci-lint run
