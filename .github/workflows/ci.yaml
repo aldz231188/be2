@@ -43,8 +43,8 @@ jobs:
           --health-retries 5
 
     env:
-      # Внутри job’а сервис доступен по имени "postgres"
-      DATABASE_URL: postgres://postgres:postgres@postgres:5432/appdb?sslmode=disable
+      # Внутри job’а сервис доступен через localhost и проброшенный порт
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/appdb?sslmode=disable
 
     steps:
       - uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
       - name: Install tools (sqlc, migrate)
         run: |
           go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
-          go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+          # go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
           go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
       - name: Generate SQL code
@@ -68,12 +68,12 @@ jobs:
       - name: Wait for DB
         run: |
           for i in {1..30}; do
-            pg_isready -h postgres -U postgres && break
+            pg_isready -h localhost -U postgres && break
             sleep 1
           done
       - name: Run DB migrations
         env:
-          DATABASE_URL: postgres://postgres:postgres@postgres:5432/appdb?sslmode=disable
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/appdb?sslmode=disable
         run: |
           migrate -path ./internal/infra/db/migrations -database "$DATABASE_URL" up
 
