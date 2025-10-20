@@ -16,5 +16,5 @@ var Module = fx.Options(
 			fx.As(new(domain.ClientRepo)),
 			// fx.As(new(domain.SupplierRepo)),
 		),
-	), fx.Invoke(),
+	),
 )

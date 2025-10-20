@@ -18,8 +18,9 @@ migrate-up:
 migrate-down:
 	migrate -path $(MIGR_DIR) -database "$(DB_URL)" down 1
 
-migrate-version:
-	migrate -path $(MIGR_DIR) -database "$(DB_URL)" version
+migrate-force:
+	@test -n "$(version)" || (echo "Usage: make migrate-force version=v№"; exit 1)
+	migrate -path $(MIGR_DIR) -database "$(DB_URL)" force $(version)
 
 
 
@@ -29,13 +30,13 @@ tidy:
 	go mod tidy
 
 
-build:
-	go build -o $(BIN) ./cmd/server
+# build:
+# 	go build -o $(BIN) ./cmd/server
 
 
-run:
-	DATABASE_DSN=$${DATABASE_DSN:-postgres://app:app@localhost:5432/app?sslmode=disable} \
-	HTTP_ADDR=:8080 $(BIN)
+# run:
+# 	DATABASE_DSN=$${DATABASE_DSN:-postgres://app:app@localhost:5432/app?sslmode=disable} \
+# 	HTTP_ADDR=:8080 $(BIN)
 
 
 sqlc:

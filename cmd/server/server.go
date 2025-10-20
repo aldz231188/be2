@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	startCtx, cancel := context.WithTimeout(context.Background(), 30*time.Millisecond)
+	startCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	app := fx.New(di.App)
 	if err := app.Start(startCtx); err != nil {
@@ -23,7 +23,7 @@ func main() {
 
 	<-app.Done()
 
-	stopCtx, cancel := context.WithTimeout(context.Background(), 15*time.Millisecond)
+	stopCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	if err := app.Stop(stopCtx); err != nil {
