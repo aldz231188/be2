@@ -1,12 +1,20 @@
+version: "3.9"
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+
 services:
   db:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: app
-      POSTGRES_PASSWORD: app
-      POSTGRES_DB: app
+      POSTGRES_DB: appdb
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      test: ["CMD-SHELL", "pg_isready -U app -d appdb"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -19,7 +27,7 @@ services:
         condition: service_healthy
     command: [
       "-path", "/migrations",
-      "-database", "postgres://app:app@db:5432/app?sslmode=disable",
+      "-database", "postgres://app:qwe@db:5432/appdb?sslmode=disable",
       "up"
     ]
     volumes:
@@ -34,6 +42,13 @@ services:
       migrator:
         condition: service_completed_successfully
     environment:
-      DATABASE_DSN: postgres://app:app@db:5432/app?sslmode=disable
       HTTP_ADDR: :8080
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: app
+      DB_NAME: appdb
+      SSLMODE: disable
+      DB_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     ports: ["8080:8080"]

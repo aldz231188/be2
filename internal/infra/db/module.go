@@ -1,6 +1,7 @@
 package db
 
 import (
+	"be2/internal/config"
 	"be2/internal/domain"
 	"be2/internal/infra/db/repo"
 	"go.uber.org/fx"
@@ -8,6 +9,7 @@ import (
 
 var Module = fx.Options(
 	fx.Provide(
+		config.LoadSecrets,
 		NewPGConfig,
 		NewPool,
 		fx.Annotate(

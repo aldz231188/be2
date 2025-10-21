@@ -5,12 +5,17 @@ import (
 	"fmt"
 	"time"
 
+	"be2/internal/config"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/fx"
+
+	"net"
+	"net/url"
 )
 
-func NewPool(lc fx.Lifecycle, cfg Config) (*pgxpool.Pool, error) {
-	pool, err := pgxpool.New(context.Background(), cfg.DSN)
+func NewPool(lc fx.Lifecycle, cfg Config, sec *config.Secrets) (*pgxpool.Pool, error) {
+	dsn := BuildPostgresDSN(cfg.Host, cfg.Port, cfg.User, sec.DBPassword, cfg.DB, cfg.SSLMode)
+	pool, err := pgxpool.New(context.Background(), dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -32,4 +37,17 @@ func NewPool(lc fx.Lifecycle, cfg Config) (*pgxpool.Pool, error) {
 	})
 
 	return pool, nil
+}
+
+func BuildPostgresDSN(host, port, user, pass, db, sslmode string) string {
+	u := &url.URL{
+		Scheme: "postgres",                   // или "postgresql"
+		User:   url.UserPassword(user, pass), // ← корректное кодирование user:pass
+		Host:   net.JoinHostPort(host, port),
+		Path:   db, // "/app"
+	}
+	q := url.Values{}
+	q.Set("sslmode", sslmode) // query-часть — уже по правилам query
+	u.RawQuery = q.Encode()
+	return u.String()
 }

@@ -1,24 +1,30 @@
 package db
 
 import (
-	"fmt"
+	// "fmt"
 	"os"
 )
 
 type Config struct {
-	DSN string
+	Host    string
+	Port    string
+	User    string
+	DB      string
+	SSLMode string
 }
-
-// TODO: Не хардкодить DSN в коде: подними из env/файла в другом месте (например, infra/config).
 
 func NewPGConfig() (Config, error) {
 	cfg := Config{
 		// DSN: "postgres://postgres:Qwaszx_1@localhost:5432/shopdb",
-		DSN: os.Getenv("DATABASE_DSN"),
+		Host:    os.Getenv("DB_HOST"),
+		Port:    os.Getenv("DB_PORT"),
+		User:    os.Getenv("DB_USER"),
+		DB:      os.Getenv("DB_NAME"),
+		SSLMode: os.Getenv("SSLMODE"),
 	}
-	if cfg.DSN == "" {
-		return cfg, fmt.Errorf("DATABASE_DSN is required")
-	}
+	// if cfg.DSN == "" {
+	// 	return cfg, fmt.Errorf("DATABASE_DSN is required")
+	// }
 	return cfg, nil
 }
 

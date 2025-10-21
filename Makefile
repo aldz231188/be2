@@ -2,7 +2,7 @@ SHELL := /bin/bash
 APP := app
 BIN := ./bin/$(APP)
 
-DB_URL=postgres://app:app@localhost:5432/app?sslmode=disable
+DB_URL=postgres://app:qwe@localhost:5432/appdb?sslmode=disable
 MIGR_DIR=./internal/infra/db/migrations
 
 .PHONY: tidy build run sqlc lint test up down
