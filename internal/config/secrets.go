@@ -26,7 +26,7 @@ func readSecretFileOrEnv(fileKey, envKey string) (string, error) {
 	return "", errors.New("missing secret: " + fileKey + " or " + envKey)
 }
 
-func LoadSecrets() (*Secrets, error) {
+func loadSecrets() (*Secrets, error) {
 	dbPass, err := readSecretFileOrEnv("DB_PASSWORD_FILE", "DB_PASSWORD")
 	if err != nil {
 		return nil, err
@@ -44,5 +44,3 @@ func LoadSecrets() (*Secrets, error) {
 		// JWTPrivateKeyPEM: key,
 	}, nil
 }
-
-// var Module = fx.Provide(LoadSecrets)

@@ -30,13 +30,13 @@ tidy:
 	go mod tidy
 
 
-# build:
-# 	go build -o $(BIN) ./cmd/server
+build:
+	go build -o $(BIN) ./cmd/server
 
 
-# run:
-# 	DATABASE_DSN=$${DATABASE_DSN:-postgres://app:app@localhost:5432/app?sslmode=disable} \
-# 	HTTP_ADDR=:8080 $(BIN)
+run:
+	DATABASE_DSN=$${DATABASE_DSN:-postgres://app:qwe@localhost:5432/appdb?sslmode=disable} \
+	HTTP_ADDR=:8080 $(BIN)
 
 
 sqlc:

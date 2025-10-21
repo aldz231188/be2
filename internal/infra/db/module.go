@@ -8,9 +8,8 @@ import (
 )
 
 var Module = fx.Options(
+	config.Module,
 	fx.Provide(
-		config.LoadSecrets,
-		NewPGConfig,
 		NewPool,
 		fx.Annotate(
 			repo.NewRepo,
