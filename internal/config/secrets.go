@@ -26,7 +26,7 @@ func readSecretFileOrEnv(fileKey, envKey string) (string, error) {
 	return "", errors.New("missing secret: " + fileKey + " or " + envKey)
 }
 
-func loadSecrets() (*Secrets, error) {
+func LoadSecrets() (*Secrets, error) {
 	dbPass, err := readSecretFileOrEnv("DB_PASSWORD_FILE", "DB_PASSWORD")
 	if err != nil {
 		return nil, err
