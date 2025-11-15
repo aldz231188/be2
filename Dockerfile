@@ -18,6 +18,3 @@ COPY --from=build --chown=nonroot:nonroot /out/app /app
 USER nonroot:nonroot
 EXPOSE 8080
 ENTRYPOINT ["/app"]
-
-
-
