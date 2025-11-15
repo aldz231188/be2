@@ -5,6 +5,7 @@ import (
 	"be2/internal/shared/date"
 
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -40,7 +41,7 @@ func NewClientService(clientRepo domain.ClientRepo, addressSvc AddressService) C
 func (s *clientService) CreateClient(ctx context.Context, c CreateClientInput) (uuid.UUID, error) {
 	addressID, err := s.addressService.CreateAddress(ctx, c.Address)
 	if err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("create client address: %w", err)
 	}
 
 	client := domain.Client{
@@ -54,15 +55,16 @@ func (s *clientService) CreateClient(ctx context.Context, c CreateClientInput) (
 	}
 
 	if err := s.clientRepo.CreateClient(ctx, client); err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("create client: %w", err)
 	}
 
 	return client.ID, nil
 }
 
 func (s *clientService) DeleteClient(ctx context.Context, id uuid.UUID) (int64, error) {
-	// if _, err := s.addressService.DeleteAddress(ctx); err != nil {
-	// 	return
-	// }
-	return s.clientRepo.DeleteClient(ctx, id)
+	deleted, err := s.clientRepo.DeleteClient(ctx, id)
+	if err != nil {
+		return 0, fmt.Errorf("delete client: %w", err)
+	}
+	return deleted, nil
 }

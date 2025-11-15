@@ -4,6 +4,7 @@ import (
 	"be2/internal/domain"
 
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -46,14 +47,18 @@ func (s *addressService) CreateAddress(ctx context.Context, c CreateAddressInput
 	}
 
 	if err := s.addressRepo.CreateAddress(ctx, address); err != nil {
-		return uuid.Nil, err
+		return uuid.Nil, fmt.Errorf("create address: %w", err)
 	}
 
 	return address.ID, nil
 }
 
 func (s *addressService) DeleteAddress(ctx context.Context, id uuid.UUID) (int64, error) {
-	return s.addressRepo.DeleteAddress(ctx, id)
+	deleted, err := s.addressRepo.DeleteAddress(ctx, id)
+	if err != nil {
+		return 0, fmt.Errorf("delete address: %w", err)
+	}
+	return deleted, nil
 }
 
 func (s *addressService) UpdateAddress(ctx context.Context, u UpdateInput) (int64, error) {
@@ -63,5 +68,9 @@ func (s *addressService) UpdateAddress(ctx context.Context, u UpdateInput) (int6
 		City:    u.City,
 		Street:  u.Street,
 	}
-	return s.addressRepo.UpdateAddress(ctx, address)
+	updated, err := s.addressRepo.UpdateAddress(ctx, address)
+	if err != nil {
+		return 0, fmt.Errorf("update address: %w", err)
+	}
+	return updated, nil
 }

@@ -1,13 +1,32 @@
 package dto
 
-import "github.com/google/uuid"
+import (
+	"be2/internal/domain"
+	"strings"
+
+	"github.com/google/uuid"
+)
 
 type UUIDRequest struct {
 	Id string `json:"id" validate:"required"`
 }
 
 func (r UUIDRequest) ToDomain() (uuid.UUID, error) {
-	return uuid.Parse(r.Id)
+	errs := domain.NewValidationErrors()
+
+	value := strings.TrimSpace(r.Id)
+	if value == "" {
+		errs.Add("id", "is required")
+		return uuid.Nil, errs
+	}
+
+	parsed, err := uuid.Parse(value)
+	if err != nil {
+		errs.Add("id", "must be a valid UUID")
+		return uuid.Nil, errs
+	}
+
+	return parsed, nil
 }
 
 // import (

@@ -4,10 +4,8 @@ import (
 	"be2/internal/app"
 	"be2/internal/domain"
 	"be2/internal/shared/date"
-	"errors"
-
-	// "time"
 	"strings"
+	"time"
 )
 
 type CreateClientRequest struct {
@@ -29,19 +27,53 @@ type ClientResponse struct {
 }
 
 func (r CreateClientRequest) ToDomainAddressClient() (app.CreateClientInput, error) {
+	errs := domain.NewValidationErrors()
 
-	if gender, err := parseGender(r.Gender); err != nil {
-		return app.CreateClientInput{}, err
-	} else {
-
-		return app.CreateClientInput{
-			ClientName:    r.ClientName,
-			ClientSurname: r.ClientSurname,
-			Birthday:      r.Birthday,
-			Gender:        gender,
-			Address:       r.Address.ToDomainAddress(),
-		}, nil
+	name := strings.TrimSpace(r.ClientName)
+	if name == "" {
+		errs.Add("client_name", "is required")
 	}
+
+	surname := strings.TrimSpace(r.ClientSurname)
+	if surname == "" {
+		errs.Add("client_surname", "is required")
+	}
+
+	if r.Birthday.Time.IsZero() {
+		errs.Add("birthday", "is required")
+	} else if r.Birthday.Time.After(time.Now().UTC()) {
+		errs.Add("birthday", "cannot be in the future")
+	}
+
+	gender, err := parseGender(r.Gender)
+	if err != nil {
+		if validationErrs, ok := err.(*domain.ValidationErrors); ok {
+			errs.Merge(validationErrs)
+		} else {
+			return app.CreateClientInput{}, err
+		}
+	}
+
+	address, err := r.Address.ToDomainAddress()
+	if err != nil {
+		if validationErrs, ok := err.(*domain.ValidationErrors); ok {
+			errs.Merge(validationErrs)
+		} else {
+			return app.CreateClientInput{}, err
+		}
+	}
+
+	if errs.HasErrors() {
+		return app.CreateClientInput{}, errs
+	}
+
+	return app.CreateClientInput{
+		ClientName:    name,
+		ClientSurname: surname,
+		Birthday:      r.Birthday,
+		Gender:        gender,
+		Address:       address,
+	}, nil
 }
 
 // func FromDomainClient(c domain.Client) ClientResponse {
@@ -54,14 +86,19 @@ func (r CreateClientRequest) ToDomainAddressClient() (app.CreateClientInput, err
 // }
 
 func parseGender(s string) (domain.Gender, error) {
+	value := strings.TrimSpace(s)
 	switch {
-	case strings.EqualFold(s, "male"):
+	case strings.EqualFold(value, "male"):
 		return domain.MALE, nil
-	case strings.EqualFold(s, "female"):
+	case strings.EqualFold(value, "female"):
 		return domain.FEMALE, nil
+	case value == "":
+		errs := domain.NewValidationErrors()
+		errs.Add("gender", "is required")
+		return domain.MALE, errs
 	default:
-		return domain.MALE, errors.New("incorrect gender")
-
+		errs := domain.NewValidationErrors()
+		errs.Add("gender", "must be either male or female")
+		return domain.MALE, errs
 	}
-
 }
