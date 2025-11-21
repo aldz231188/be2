@@ -6,12 +6,15 @@ import (
 	"be2/internal/http/v1/handlers"
 	"be2/internal/infra/db"
 	"go.uber.org/fx"
+	"log/slog"
+	"os"
 	// "os"
 )
 
 var App = fx.Options(
 	db.Module,
 	fx.Provide(
+		newLogger,
 		fx.Annotate(
 			app.NewAddressService,
 			fx.As(new(app.AddressService)),
@@ -30,3 +33,8 @@ var App = fx.Options(
 	// 	}
 	// }),
 )
+
+func newLogger() *slog.Logger {
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: true})
+	return slog.New(handler)
+}

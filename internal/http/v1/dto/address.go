@@ -3,6 +3,7 @@ package dto
 import (
 	"be2/internal/app"
 	"be2/internal/domain"
+	"strings"
 )
 
 type CreateAddressRequest struct {
@@ -18,12 +19,33 @@ type AddressResponse struct {
 	Street  string `json:"gender"`
 }
 
-func (r CreateAddressRequest) ToDomainAddress() app.CreateAddressInput {
-	return app.CreateAddressInput{
-		Country: r.Country,
-		City:    r.City,
-		Street:  r.Street,
+func (r CreateAddressRequest) ToDomainAddress() (app.CreateAddressInput, error) {
+	errs := domain.NewValidationErrors()
+
+	country := strings.TrimSpace(r.Country)
+	if country == "" {
+		errs.Add("address.country", "is required")
 	}
+
+	city := strings.TrimSpace(r.City)
+	if city == "" {
+		errs.Add("address.city", "is required")
+	}
+
+	street := strings.TrimSpace(r.Street)
+	if street == "" {
+		errs.Add("address.street", "is required")
+	}
+
+	if errs.HasErrors() {
+		return app.CreateAddressInput{}, errs
+	}
+
+	return app.CreateAddressInput{
+		Country: country,
+		City:    city,
+		Street:  street,
+	}, nil
 }
 
 func FromDomainAddress(c domain.Address) AddressResponse {
