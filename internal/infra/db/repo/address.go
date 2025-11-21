@@ -3,6 +3,7 @@ package repo
 import (
 	"be2/internal/domain"
 	"context"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 )
@@ -19,6 +20,9 @@ import (
 func (r *Repo) CreateAddress(ctx context.Context, c domain.Address) error {
 	address := createAddressToRow(c)
 	if err := r.q.CreateAddress(ctx, address); err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return err
+		}
 		return fmt.Errorf("create address: %w", err)
 	}
 	return nil
@@ -26,6 +30,9 @@ func (r *Repo) CreateAddress(ctx context.Context, c domain.Address) error {
 func (r *Repo) DeleteAddress(ctx context.Context, id uuid.UUID) (int64, error) {
 	deleted, err := r.q.DeleteAddress(ctx, id)
 	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return 0, err
+		}
 		return 0, fmt.Errorf("delete address: %w", err)
 	}
 	if deleted == 0 {
@@ -37,6 +44,9 @@ func (r *Repo) UpdateAddress(ctx context.Context, c domain.Address) (int64, erro
 	address := updateAddressToRow(c)
 	updated, err := r.q.UpdateAddress(ctx, address)
 	if err != nil {
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			return 0, err
+		}
 		return 0, fmt.Errorf("update address: %w", err)
 	}
 	if updated == 0 {

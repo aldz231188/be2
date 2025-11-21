@@ -7,19 +7,27 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"time"
 )
 
+const statusClientClosedRequest = 499
+
 type Handler struct {
-	AS app.AddressService
-	CS app.ClientService
+	AS     app.AddressService
+	CS     app.ClientService
+	logger *slog.Logger
 }
 
-func NewHandler(asi app.AddressService, csi app.ClientService) Handler {
+func NewHandler(asi app.AddressService, csi app.ClientService, logger *slog.Logger) Handler {
+	if logger == nil {
+		logger = slog.Default()
+	}
 	return Handler{
-		AS: asi,
-		CS: csi,
+		AS:     asi,
+		CS:     csi,
+		logger: logger,
 	}
 }
 
@@ -48,11 +56,13 @@ func (h *Handler) HandleCreateClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.CS.CreateClient(ctx, client); err != nil {
+	clientID, err := h.CS.CreateClient(ctx, client)
+	if err != nil {
 		h.handleDomainError(w, err)
 		return
 	}
 
+	h.logger.InfoContext(ctx, "client created", "client_id", clientID)
 	h.respondJSON(w, http.StatusCreated, dto.SuccessResponse{Status: "ok"})
 }
 
@@ -72,12 +82,13 @@ func (h *Handler) HandleDeleteClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := h.CS.DeleteClient(ctx, id); err != nil {
+	if deleted, err := h.CS.DeleteClient(ctx, id); err != nil {
 		h.handleDomainError(w, err)
 		return
+	} else {
+		h.logger.InfoContext(ctx, "client deleted", "client_id", id, "deleted_rows", deleted)
+		h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
 	}
-
-	h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
 }
 
 func (h *Handler) handleDomainError(w http.ResponseWriter, err error) {
@@ -86,6 +97,15 @@ func (h *Handler) handleDomainError(w http.ResponseWriter, err error) {
 		message = "internal server error"
 		details []dto.ErrorDetail
 	)
+
+	switch {
+	case errors.Is(err, context.Canceled):
+		status = statusClientClosedRequest
+		message = "request canceled"
+	case errors.Is(err, context.DeadlineExceeded):
+		status = http.StatusGatewayTimeout
+		message = "request deadline exceeded"
+	}
 
 	var validationErrs *domain.ValidationErrors
 	switch {
@@ -106,6 +126,7 @@ func (h *Handler) handleDomainError(w http.ResponseWriter, err error) {
 		message = err.Error()
 	}
 
+	h.logger.Warn("request failed", "status", status, "message", message, "error", err)
 	h.respondError(w, status, message, details)
 }
 
