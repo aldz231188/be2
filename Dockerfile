@@ -12,9 +12,9 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -trimpath -ldflags="-s -w" -o /out/app ./cmd/server
 
-FROM gcr.io/distroless/static-debian12
+FROM gcr.io/distroless/static-debian12 AS dev
 # ENV APP_ENV=prod
 COPY --from=build --chown=nonroot:nonroot /out/app /app
 USER nonroot:nonroot
-EXPOSE 8080
+# EXPOSE 8080
 ENTRYPOINT ["/app"]

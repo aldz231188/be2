@@ -63,7 +63,7 @@ func (h *Handler) HandleCreateClient(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.logger.InfoContext(ctx, "client created", "client_id", clientID)
-	h.respondJSON(w, http.StatusCreated, dto.SuccessResponse{Status: "ok"})
+	h.respondJSON(w, http.StatusCreated, dto.SuccessResponse{Status: clientID.String()})
 }
 
 func (h *Handler) HandleDeleteClient(w http.ResponseWriter, r *http.Request) {

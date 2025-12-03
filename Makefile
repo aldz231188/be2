@@ -49,10 +49,13 @@ lint:
 test:
 	go test ./...
 
+COMPOSE := docker compose -f docker-compose.dev.yml --env-file .env.dev -p myapp-dev
 
 up:
-	docker compose up -d --build
+	$(COMPOSE) up -d --build
 
+logs:
+	$(COMPOSE) logs -f app migrator nginx db
 
 down:
-	docker compose down -v
+	$(COMPOSE) down -v
