@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -38,6 +39,7 @@ type TokenClaims struct {
 
 type AuthService interface {
 	Authenticate(ctx context.Context, username, password string) (TokenPair, error)
+	Register(ctx context.Context, username, password string) (TokenPair, error)
 	Refresh(ctx context.Context, refreshToken string) (TokenPair, error)
 	LogoutCurrent(ctx context.Context, refreshToken string) error
 	LogoutAll(ctx context.Context, refreshToken string) error
@@ -75,6 +77,24 @@ func (s *authService) Authenticate(ctx context.Context, username, password strin
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 		return TokenPair{}, ErrInvalidCredentials
+	}
+
+	return s.issueSessionTokens(ctx, user)
+}
+
+func (s *authService) Register(ctx context.Context, username, password string) (TokenPair, error) {
+	if strings.TrimSpace(username) == "" || strings.TrimSpace(password) == "" {
+		return TokenPair{}, ErrInvalidCredentials
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return TokenPair{}, err
+	}
+
+	user, err := s.users.CreateUser(ctx, domain.User{Username: username, PasswordHash: string(hash)})
+	if err != nil {
+		return TokenPair{}, err
 	}
 
 	return s.issueSessionTokens(ctx, user)

@@ -7,7 +7,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func (r *Repo) GetByUsername(ctx context.Context, username string) (domain.User, error) {
@@ -41,6 +43,29 @@ func (r *Repo) GetByID(ctx context.Context, id uuid.UUID) (domain.User, error) {
 			return domain.User{}, domain.ErrUserNotFound
 		}
 		return domain.User{}, fmt.Errorf("get user by id: %w", err)
+	}
+
+	return domain.User{
+		ID:           row.ID,
+		Username:     row.Username,
+		PasswordHash: row.PasswordHash,
+		CreatedAt:    row.CreatedAt.Time,
+		TokenVersion: row.TokenVersion,
+	}, nil
+}
+
+func (r *Repo) CreateUser(ctx context.Context, user domain.User) (domain.User, error) {
+	row, err := r.q.CreateUser(ctx, user.Username, user.PasswordHash)
+	if err != nil {
+		var pgErr *pgconn.PgError
+		switch {
+		case errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded):
+			return domain.User{}, err
+		case errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation:
+			return domain.User{}, domain.ErrUserAlreadyExists
+		default:
+			return domain.User{}, fmt.Errorf("create user: %w", err)
+		}
 	}
 
 	return domain.User{

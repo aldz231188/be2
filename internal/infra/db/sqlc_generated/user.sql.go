@@ -51,6 +51,25 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 	return i, err
 }
 
+const createUser = `-- name: CreateUser :one
+INSERT INTO "user" (username, password_hash)
+VALUES ($1, $2)
+RETURNING id, username, password_hash, created_at, token_version
+`
+
+func (q *Queries) CreateUser(ctx context.Context, username string, passwordHash string) (User, error) {
+	row := q.db.QueryRow(ctx, createUser, username, passwordHash)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.PasswordHash,
+		&i.CreatedAt,
+		&i.TokenVersion,
+	)
+	return i, err
+}
+
 const incrementTokenVersion = `-- name: IncrementTokenVersion :execrows
 UPDATE "user"
 SET token_version = token_version + 1

@@ -14,6 +14,7 @@ import (
 
 func RegisterRoutes(lc fx.Lifecycle, h handlers.Handler, jwt *middleware.JWT) {
 	mux := http.NewServeMux()
+	mux.HandleFunc("POST /register", h.HandleRegister)
 	mux.HandleFunc("POST /login", h.HandleLogin)
 	mux.HandleFunc("POST /refresh", h.HandleRefresh)
 	mux.HandleFunc("POST /logout", h.HandleLogout)

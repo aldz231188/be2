@@ -21,6 +21,7 @@ type ClientRepo interface {
 type UserRepo interface {
 	GetByUsername(ctx context.Context, username string) (User, error)
 	GetByID(ctx context.Context, id uuid.UUID) (User, error)
+	CreateUser(ctx context.Context, user User) (User, error)
 	IncrementTokenVersion(ctx context.Context, id uuid.UUID) error
 }
 

@@ -11,6 +11,7 @@ var (
 	ErrClientAlreadyExists = errors.New("client already exists")
 	ErrAddressNotFound     = errors.New("address not found")
 	ErrUserNotFound        = errors.New("user not found")
+	ErrUserAlreadyExists   = errors.New("user already exists")
 	ErrSessionNotFound     = errors.New("session not found")
 )
 

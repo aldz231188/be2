@@ -57,6 +57,36 @@ func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, dto.TokenResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken})
 }
 
+func (h *Handler) HandleRegister(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+
+	var req dto.RegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
+		return
+	}
+
+	tokens, err := h.Auth.Register(ctx, req.Username, req.Password)
+	if err != nil {
+		status := http.StatusInternalServerError
+		switch {
+		case errors.Is(err, domain.ErrUserAlreadyExists):
+			status = http.StatusConflict
+			h.respondError(w, status, "user already exists", nil)
+			return
+		case errors.Is(err, app.ErrInvalidCredentials):
+			status = http.StatusBadRequest
+			h.respondError(w, status, "invalid credentials", nil)
+			return
+		}
+		h.respondError(w, status, err.Error(), nil)
+		return
+	}
+
+	h.respondJSON(w, http.StatusCreated, dto.TokenResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken})
+}
+
 func (h *Handler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
