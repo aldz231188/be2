@@ -27,3 +27,19 @@ type Client struct {
 	RegistrationDate pgtype.Timestamptz
 	AddressID        uuid.UUID
 }
+
+type Session struct {
+	JtiHash   string
+	UserID    uuid.UUID
+	ExpiresAt pgtype.Timestamptz
+	RevokedAt pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+}
+
+type User struct {
+	ID           uuid.UUID
+	Username     string
+	PasswordHash string
+	CreatedAt    pgtype.Timestamptz
+	TokenVersion int32
+}
