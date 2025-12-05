@@ -11,6 +11,30 @@ import (
 	uuid "github.com/google/uuid"
 )
 
+const createUser = `-- name: CreateUser :one
+INSERT INTO "user" (username, password_hash)
+VALUES ($1, $2)
+RETURNING id, username, password_hash, created_at, token_version
+`
+
+type CreateUserParams struct {
+	Username     string
+	PasswordHash string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, createUser, arg.Username, arg.PasswordHash)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.PasswordHash,
+		&i.CreatedAt,
+		&i.TokenVersion,
+	)
+	return i, err
+}
+
 const getUserByID = `-- name: GetUserByID :one
 SELECT id, username, password_hash, created_at, token_version
 FROM "user"
@@ -40,25 +64,6 @@ LIMIT 1
 
 func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
 	row := q.db.QueryRow(ctx, getUserByUsername, username)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.PasswordHash,
-		&i.CreatedAt,
-		&i.TokenVersion,
-	)
-	return i, err
-}
-
-const createUser = `-- name: CreateUser :one
-INSERT INTO "user" (username, password_hash)
-VALUES ($1, $2)
-RETURNING id, username, password_hash, created_at, token_version
-`
-
-func (q *Queries) CreateUser(ctx context.Context, username string, passwordHash string) (User, error) {
-	row := q.db.QueryRow(ctx, createUser, username, passwordHash)
 	var i User
 	err := row.Scan(
 		&i.ID,
