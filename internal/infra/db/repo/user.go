@@ -2,6 +2,7 @@ package repo
 
 import (
 	"be2/internal/domain"
+	"be2/internal/infra/db/sqlc_generated"
 	"context"
 	"errors"
 	"fmt"
@@ -55,7 +56,7 @@ func (r *Repo) GetByID(ctx context.Context, id uuid.UUID) (domain.User, error) {
 }
 
 func (r *Repo) CreateUser(ctx context.Context, user domain.User) (domain.User, error) {
-	row, err := r.q.CreateUser(ctx, user.Username, user.PasswordHash)
+	row, err := r.q.CreateUser(ctx, sqlc_generated.CreateUserParams{Username: user.Username, PasswordHash: user.PasswordHash}) //некрасиво как то
 	if err != nil {
 		var pgErr *pgconn.PgError
 		switch {
