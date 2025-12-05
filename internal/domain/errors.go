@@ -10,6 +10,8 @@ var (
 	ErrClientNotFound      = errors.New("client not found")
 	ErrClientAlreadyExists = errors.New("client already exists")
 	ErrAddressNotFound     = errors.New("address not found")
+	ErrUserNotFound        = errors.New("user not found")
+	ErrSessionNotFound     = errors.New("session not found")
 )
 
 type ValidationError struct {

@@ -29,3 +29,19 @@ type Address struct {
 	City    string
 	Street  string
 }
+
+type User struct {
+	ID           uuid.UUID
+	Username     string
+	PasswordHash string
+	CreatedAt    time.Time
+	TokenVersion int32
+}
+
+type Session struct {
+	JTIHash   string
+	UserID    uuid.UUID
+	ExpiresAt time.Time
+	RevokedAt *time.Time
+	CreatedAt time.Time
+}

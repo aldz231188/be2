@@ -17,3 +17,16 @@ type ClientRepo interface {
 	DeleteClient(ctx context.Context, id uuid.UUID) (int64, error)
 	// UpdateClient(ctx context.Context, a Address) (int64, error)
 }
+
+type UserRepo interface {
+	GetByUsername(ctx context.Context, username string) (User, error)
+	GetByID(ctx context.Context, id uuid.UUID) (User, error)
+	IncrementTokenVersion(ctx context.Context, id uuid.UUID) error
+}
+
+type SessionRepo interface {
+	CreateSession(ctx context.Context, session Session) error
+	GetSessionByHash(ctx context.Context, hash string) (Session, error)
+	RevokeSession(ctx context.Context, hash string) error
+	RevokeSessionsByUser(ctx context.Context, userID uuid.UUID) error
+}

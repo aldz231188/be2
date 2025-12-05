@@ -9,6 +9,7 @@ import (
 
 type Secrets struct {
 	DBPassword string
+	JWTSecret  string
 	// JWTPrivateKeyPEM  []byte
 }
 
@@ -32,15 +33,21 @@ func LoadSecrets() (*Secrets, error) {
 		return nil, err
 	}
 
+	jwtSecret, err := readSecretFileOrEnv("JWT_SECRET_FILE", "JWT_SECRET")
+	if err != nil {
+		return nil, err
+	}
+
 	// jwtPath := os.Getenv("JWT_PRIVATE_KEY_PATH")
 	// if jwtPath == "" {
-	// 	return nil, errors.New("missing secret: JWT_PRIVATE_KEY_PATH")
+	//      return nil, errors.New("missing secret: JWT_PRIVATE_KEY_PATH")
 	// }
 	// key, err := os.ReadFile(jwtPath)
 	// if err != nil { return nil, err }
 
 	return &Secrets{
 		DBPassword: dbPass,
+		JWTSecret:  jwtSecret,
 		// JWTPrivateKeyPEM: key,
 	}, nil
 }

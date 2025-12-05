@@ -3,6 +3,7 @@ package di
 import (
 	"be2/internal/app"
 	router "be2/internal/http"
+	"be2/internal/http/middleware"
 	"be2/internal/http/v1/handlers"
 	"be2/internal/infra/db"
 	"go.uber.org/fx"
@@ -23,6 +24,11 @@ var App = fx.Options(
 			app.NewClientService,
 			fx.As(new(app.ClientService)),
 		),
+		fx.Annotate(
+			app.NewAuthService,
+			fx.As(new(app.AuthService)),
+		),
+		middleware.NewJWT,
 	),
 	fx.Provide(handlers.NewHandler),
 	fx.Invoke(router.RegisterRoutes),

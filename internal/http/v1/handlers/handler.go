@@ -17,18 +17,114 @@ const statusClientClosedRequest = 499
 type Handler struct {
 	AS     app.AddressService
 	CS     app.ClientService
+	Auth   app.AuthService
 	logger *slog.Logger
 }
 
-func NewHandler(asi app.AddressService, csi app.ClientService, logger *slog.Logger) Handler {
+func NewHandler(asi app.AddressService, csi app.ClientService, auth app.AuthService, logger *slog.Logger) Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return Handler{
 		AS:     asi,
 		CS:     csi,
+		Auth:   auth,
 		logger: logger,
 	}
+}
+
+func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+
+	var creds dto.LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
+		return
+	}
+
+	tokens, err := h.Auth.Authenticate(ctx, creds.Username, creds.Password)
+	if err != nil {
+		status := http.StatusUnauthorized
+		if errors.Is(err, app.ErrInvalidCredentials) {
+			h.respondError(w, status, "invalid credentials", nil)
+			return
+		}
+		h.respondError(w, status, err.Error(), nil)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto.TokenResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken})
+}
+
+func (h *Handler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+
+	var req dto.RefreshRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
+		return
+	}
+
+	tokens, err := h.Auth.Refresh(ctx, req.RefreshToken)
+	if err != nil {
+		status := http.StatusUnauthorized
+		if errors.Is(err, app.ErrInvalidToken) {
+			h.respondError(w, status, "invalid or expired token", nil)
+			return
+		}
+		h.respondError(w, status, err.Error(), nil)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto.TokenResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken})
+}
+
+func (h *Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+
+	var req dto.LogoutRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
+		return
+	}
+
+	if err := h.Auth.LogoutCurrent(ctx, req.RefreshToken); err != nil {
+		status := http.StatusUnauthorized
+		if errors.Is(err, app.ErrInvalidToken) {
+			h.respondError(w, status, "invalid or expired token", nil)
+			return
+		}
+		h.respondError(w, status, err.Error(), nil)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
+}
+
+func (h *Handler) HandleLogoutAll(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
+
+	var req dto.LogoutRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
+		return
+	}
+
+	if err := h.Auth.LogoutAll(ctx, req.RefreshToken); err != nil {
+		status := http.StatusUnauthorized
+		if errors.Is(err, app.ErrInvalidToken) {
+			h.respondError(w, status, "invalid or expired token", nil)
+			return
+		}
+		h.respondError(w, status, err.Error(), nil)
+		return
+	}
+
+	h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
 }
 
 // GetClient godoc
