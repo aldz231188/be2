@@ -3,6 +3,8 @@ version: "3.9"
 secrets:
   db_password:
     file: ./secrets/db_password.txt
+  jwt_secret:
+    file: ./secrets/jwt_secret.txt
 
 services:
   db:
@@ -60,8 +62,10 @@ services:
         condition: service_completed_successfully
     secrets:
       - db_password
+      - jwt_secret
     environment:
       DB_PASSWORD_FILE: /run/secrets/db_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
     expose:
       - ${HTTP_PORT}
     # ports: ["8080:8080"]
