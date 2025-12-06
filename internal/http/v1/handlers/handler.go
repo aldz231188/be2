@@ -33,6 +33,17 @@ func NewHandler(asi app.AddressService, csi app.ClientService, auth app.AuthServ
 	}
 }
 
+// HandleLogin godoc
+// @Summary     Authenticate user
+// @Tags        auth
+// @Accept      json
+// @Produce     json
+// @Param       request body dto.LoginRequest true "User credentials"
+// @Success     200 {object} dto.TokenResponse
+// @Failure     400 {object} dto.ErrorResponse
+// @Failure     401 {object} dto.ErrorResponse
+// @Failure     500 {object} dto.ErrorResponse
+// @Router      /login [post]
 func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
@@ -57,6 +68,17 @@ func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, dto.TokenResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken})
 }
 
+// HandleRegister godoc
+// @Summary     Register a new user
+// @Tags        auth
+// @Accept      json
+// @Produce     json
+// @Param       request body dto.RegisterRequest true "Registration payload"
+// @Success     201 {object} dto.TokenResponse
+// @Failure     400 {object} dto.ErrorResponse
+// @Failure     409 {object} dto.ErrorResponse
+// @Failure     500 {object} dto.ErrorResponse
+// @Router      /register [post]
 func (h *Handler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
@@ -87,6 +109,17 @@ func (h *Handler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusCreated, dto.TokenResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken})
 }
 
+// HandleRefresh godoc
+// @Summary     Refresh access token
+// @Tags        auth
+// @Accept      json
+// @Produce     json
+// @Param       request body dto.RefreshRequest true "Refresh token"
+// @Success     200 {object} dto.TokenResponse
+// @Failure     400 {object} dto.ErrorResponse
+// @Failure     401 {object} dto.ErrorResponse
+// @Failure     500 {object} dto.ErrorResponse
+// @Router      /refresh [post]
 func (h *Handler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
@@ -111,6 +144,17 @@ func (h *Handler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, dto.TokenResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken})
 }
 
+// HandleLogout godoc
+// @Summary     Logout current session
+// @Tags        auth
+// @Accept      json
+// @Produce     json
+// @Param       request body dto.LogoutRequest true "Refresh token"
+// @Success     200 {object} dto.SuccessResponse
+// @Failure     400 {object} dto.ErrorResponse
+// @Failure     401 {object} dto.ErrorResponse
+// @Failure     500 {object} dto.ErrorResponse
+// @Router      /logout [post]
 func (h *Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
@@ -134,6 +178,17 @@ func (h *Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
 }
 
+// HandleLogoutAll godoc
+// @Summary     Logout from all sessions
+// @Tags        auth
+// @Accept      json
+// @Produce     json
+// @Param       request body dto.LogoutRequest true "Refresh token"
+// @Success     200 {object} dto.SuccessResponse
+// @Failure     400 {object} dto.ErrorResponse
+// @Failure     401 {object} dto.ErrorResponse
+// @Failure     500 {object} dto.ErrorResponse
+// @Router      /logout_all [post]
 func (h *Handler) HandleLogoutAll(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
@@ -157,14 +212,19 @@ func (h *Handler) HandleLogoutAll(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
 }
 
-// GetClient godoc
-// @Summary     Get client by ID
+// HandleCreateClient godoc
+// @Summary     Create client
 // @Tags        clients
+// @Accept      json
 // @Produce     json
-// @Param       id path string true "Client ID" format(uuid)
-// @Success     200 {object} contracts.ClientResponse
-// @Failure     404 {object} contracts.ErrorResponse
-// @Router      /clients/{id} [get]
+// @Param       request body dto.CreateClientRequest true "Client payload"
+// @Success     201 {object} dto.SuccessResponse
+// @Failure     400 {object} dto.ErrorResponse
+// @Failure     401 {object} dto.ErrorResponse
+// @Failure     404 {object} dto.ErrorResponse
+// @Failure     409 {object} dto.ErrorResponse
+// @Failure     500 {object} dto.ErrorResponse
+// @Router      /createclient [post]
 // @Security    BearerAuth
 func (h *Handler) HandleCreateClient(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
@@ -192,6 +252,19 @@ func (h *Handler) HandleCreateClient(w http.ResponseWriter, r *http.Request) {
 	h.respondJSON(w, http.StatusCreated, dto.SuccessResponse{Status: clientID.String()})
 }
 
+// HandleDeleteClient godoc
+// @Summary     Delete client
+// @Tags        clients
+// @Accept      json
+// @Produce     json
+// @Param       request body dto.UUIDRequest true "Client ID"
+// @Success     200 {object} dto.SuccessResponse
+// @Failure     400 {object} dto.ErrorResponse
+// @Failure     401 {object} dto.ErrorResponse
+// @Failure     404 {object} dto.ErrorResponse
+// @Failure     500 {object} dto.ErrorResponse
+// @Router      /deleteclient [post]
+// @Security    BearerAuth
 func (h *Handler) HandleDeleteClient(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()

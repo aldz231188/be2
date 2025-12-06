@@ -1,7 +1,10 @@
 // @title       be2 API
 // @version     1.0
 // @description Internal API
-// @BasePath    /api/v1
+// @BasePath    /
+// @securityDefinitions.apikey BearerAuth
+// @in          header
+// @name        Authorization
 
 package main
 
