@@ -6,6 +6,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	// "time"
 
 	_ "be2/swagger" // <- сгенерированные доки
 	httpSwagger "github.com/swaggo/http-swagger"
@@ -26,6 +27,9 @@ func RegisterRoutes(lc fx.Lifecycle, h handlers.Handler, jwt *middleware.JWT) {
 	server := &http.Server{
 		Addr:    ":8080",
 		Handler: mux,
+		// ReadTimeout:  5 * time.Second,
+		// WriteTimeout: 15 * time.Second,
+		// IdleTimeout:  60 * time.Second,
 	}
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {

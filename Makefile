@@ -59,3 +59,6 @@ logs:
 
 down:
 	$(COMPOSE) down -v
+
+stop:
+	$(COMPOSE) stop

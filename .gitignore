@@ -2,3 +2,13 @@ secrets/
 bin/
 !secrets/.gitkeep 
 .env
+
+# TLS / SSL
+nginx/ssl/*.key
+nginx/ssl/*-key.pem
+nginx/ssl/*.p12
+nginx/ssl/*.pfx
+nginx/ssl/*.csr
+nginx/ssl/*.srl
+*rootCA-key.pem
+*rootCA.pem
