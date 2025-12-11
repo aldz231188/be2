@@ -35,8 +35,8 @@ build:
 
 
 run:
-	DATABASE_DSN=$${DATABASE_DSN:-postgres://app:qwe@localhost:5432/appdb?sslmode=disable} \
-	HTTP_ADDR=:8080 $(BIN)
+	DB_PASSWORD_FILE="./secrets/db_password.txt" \
+	JWT_SECRET_FILE="./secrets/jwt_secret.txt" $(BIN)
 
 
 sqlc:
@@ -62,3 +62,5 @@ down:
 
 stop:
 	$(COMPOSE) stop
+
+# добавить сборку сертификатов

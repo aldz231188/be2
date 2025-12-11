@@ -1,0 +1,95 @@
+digraph {
+	rankdir=RL;
+	graph [compound=true];
+	subgraph cluster_0 {
+		label = "go.uber.org/fx";
+		constructor_0 [shape=plaintext label="New.func1"];
+		"fx.Lifecycle" [label=<fx.Lifecycle>];
+	}
+	subgraph cluster_1 {
+		label = "go.uber.org/fx";
+		constructor_1 [shape=plaintext label="(*App).shutdowner-fm"];
+		"fx.Shutdowner" [label=<fx.Shutdowner>];
+	}
+	subgraph cluster_2 {
+		label = "go.uber.org/fx";
+		constructor_2 [shape=plaintext label="(*App).dotGraph-fm"];
+		"fx.DotGraph" [label=<fx.DotGraph>];
+	}
+	subgraph cluster_3 {
+		label = "be2/internal/config";
+		constructor_3 [shape=plaintext label="LoadConfig"];
+		"config.Config" [label=<config.Config>];
+	}
+	subgraph cluster_4 {
+		label = "be2/internal/config";
+		constructor_4 [shape=plaintext label="LoadSecrets"];
+		"*config.Secrets" [label=<*config.Secrets>];
+	}
+	subgraph cluster_5 {
+		label = "be2/internal/infra/db";
+		constructor_5 [shape=plaintext label="NewPool"];
+		"*pgxpool.Pool" [label=<*pgxpool.Pool>];
+	}
+	constructor_5 -> "fx.Lifecycle" [ltail=cluster_5];
+	constructor_5 -> "config.Config" [ltail=cluster_5];
+	constructor_5 -> "*config.Secrets" [ltail=cluster_5];
+	subgraph cluster_6 {
+		label = "reflect";
+		constructor_6 [shape=plaintext label="makeFuncStub"];
+		"domain.AddressRepo" [label=<domain.AddressRepo>];
+		"domain.ClientRepo" [label=<domain.ClientRepo>];
+		"domain.UserRepo" [label=<domain.UserRepo>];
+		"domain.SessionRepo" [label=<domain.SessionRepo>];
+	}
+	constructor_6 -> "*pgxpool.Pool" [ltail=cluster_6];
+	subgraph cluster_7 {
+		label = "be2/internal/di";
+		constructor_7 [shape=plaintext label="newLogger"];
+		"*slog.Logger" [label=<*slog.Logger>];
+	}
+	subgraph cluster_8 {
+		label = "reflect";
+		constructor_8 [shape=plaintext label="makeFuncStub"];
+		"app.AddressService" [label=<app.AddressService>];
+	}
+	constructor_8 -> "domain.AddressRepo" [ltail=cluster_8];
+	subgraph cluster_9 {
+		label = "reflect";
+		constructor_9 [shape=plaintext label="makeFuncStub"];
+		"app.ClientService" [label=<app.ClientService>];
+	}
+	constructor_9 -> "domain.ClientRepo" [ltail=cluster_9];
+	constructor_9 -> "app.AddressService" [ltail=cluster_9];
+	subgraph cluster_10 {
+		label = "reflect";
+		constructor_10 [shape=plaintext label="makeFuncStub"];
+		"app.AuthService" [label=<app.AuthService>];
+	}
+	constructor_10 -> "domain.UserRepo" [ltail=cluster_10];
+	constructor_10 -> "domain.SessionRepo" [ltail=cluster_10];
+	constructor_10 -> "*config.Secrets" [ltail=cluster_10];
+	subgraph cluster_11 {
+		label = "be2/internal/http/middleware";
+		constructor_11 [shape=plaintext label="NewJWT"];
+		"*middleware.JWT" [label=<*middleware.JWT>];
+	}
+	constructor_11 -> "app.AuthService" [ltail=cluster_11];
+	subgraph cluster_12 {
+		label = "be2/internal/http/v1/handlers";
+		constructor_12 [shape=plaintext label="NewHandler"];
+		"handlers.Handler" [label=<handlers.Handler>];
+	}
+	constructor_12 -> "app.AddressService" [ltail=cluster_12];
+	constructor_12 -> "app.ClientService" [ltail=cluster_12];
+	constructor_12 -> "app.AuthService" [ltail=cluster_12];
+	constructor_12 -> "*slog.Logger" [ltail=cluster_12];
+	subgraph cluster_13 {
+		label = "be2/internal/http";
+		constructor_13 [shape=plaintext label="RegisterRoutes"];
+		"*http.ServeMux" [label=<*http.ServeMux>];
+	}
+	constructor_13 -> "fx.Lifecycle" [ltail=cluster_13];
+	constructor_13 -> "handlers.Handler" [ltail=cluster_13];
+	constructor_13 -> "*middleware.JWT" [ltail=cluster_13];
+}

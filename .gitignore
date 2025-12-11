@@ -5,6 +5,7 @@ bin/
 
 # TLS / SSL
 nginx/ssl/*.key
+nginx/ssl/*.crt
 nginx/ssl/*-key.pem
 nginx/ssl/*.p12
 nginx/ssl/*.pfx

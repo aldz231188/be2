@@ -9,7 +9,6 @@ import (
 	"go.uber.org/fx"
 	"log/slog"
 	"os"
-	// "os"
 )
 
 var App = fx.Options(
@@ -31,7 +30,8 @@ var App = fx.Options(
 		middleware.NewJWT,
 	),
 	fx.Provide(handlers.NewHandler),
-	fx.Invoke(router.RegisterRoutes),
+	fx.Invoke(router.NewServer),
+	fx.Provide(router.RegisterRoutes),
 	// fx.Invoke(func(g fx.DotGraph) {
 	// 	err := os.WriteFile("graph.dot", []byte(g), 0644)
 	// 	if err != nil {
