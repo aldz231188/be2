@@ -1,8 +1,24 @@
 SHELL := /bin/bash
-APP := app
-BIN := ./bin/$(APP)
+.ONESHELL:
+.SHELLFLAGS := -eu -o pipefail -c
 
-DB_URL=postgres://app:qwe@localhost:5432/appdb?sslmode=disable
+ENV ?= dev
+ENV_FILE := .env.$(ENV)
+-include $(ENV_FILE)
+
+# DB_USER    ?= app
+# DB_HOST_OUTSIDE    ?= localhost
+# DB_PORT    ?= 5432
+# DB_NAME    ?= appdb
+# DB_SSLMODE ?= disable
+DB_PASSWORD_FILE ?= ./secrets/db_password.txt
+
+define EXPORT_DB_URI
+[[ -f "$(DB_PASSWORD_FILE)" ]] || { echo "Missing password file: $(DB_PASSWORD_FILE)"; exit 1; }
+DB_PASSWORD="$$(tr -d '\n' < "$(DB_PASSWORD_FILE)")"
+export DB_URI="postgres://$(DB_USER):$${DB_PASSWORD}@$(DB_HOST_OUTSIDE):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)"
+endef
+
 MIGR_DIR=./internal/infra/db/migrations
 
 .PHONY: tidy build run sqlc lint test up down
@@ -13,14 +29,17 @@ migrate-create:
 	migrate create -ext sql -dir $(MIGR_DIR) -format 20060102150405 $(name)
 
 migrate-up:
-	migrate -path $(MIGR_DIR) -database "$(DB_URL)" up
+	$(EXPORT_DB_URI)
+	migrate -path $(MIGR_DIR) -database "$(DB_URI)" up
 
 migrate-down:
-	migrate -path $(MIGR_DIR) -database "$(DB_URL)" down 1
+	$(EXPORT_DB_URI)
+	migrate -path $(MIGR_DIR) -database "$(DB_URI)" down 1
 
 migrate-force:
+	$(EXPORT_DB_URI)
 	@test -n "$(version)" || (echo "Usage: make migrate-force version=v№"; exit 1)
-	migrate -path $(MIGR_DIR) -database "$(DB_URL)" force $(version)
+	migrate -path $(MIGR_DIR) -database "$(DB_URI)" force $(version)
 
 
 
@@ -31,20 +50,30 @@ tidy:
 
 
 build:
-	go build -o $(BIN) ./cmd/server
+	go build -o app ./cmd/server
+
+# run:
+# 	DB_PASSWORD_FILE="./secrets/db_password.txt" \
+# 	JWT_SECRET_FILE="./secrets/jwt_secret.txt" $(BIN)
 
 
-run:
-	DB_PASSWORD_FILE="./secrets/db_password.txt" \
-	JWT_SECRET_FILE="./secrets/jwt_secret.txt" $(BIN)
+# sqlc:
+# 	sqlc generate
 
+sqlc-vet:
+	$(EXPORT_DB_URI)
+	sqlc vet
 
-sqlc:
+sqlc-gen:
 	sqlc generate
+
+sqlc: sqlc-vet sqlc-gen
+
+
+
 
 lint:
 	golangci-lint run
-
 
 test:
 	go test ./...
@@ -52,15 +81,43 @@ test:
 COMPOSE := docker compose -f docker-compose.dev.yml --env-file .env.dev -p myapp-dev
 
 up:
-	$(COMPOSE) up -d --build
-
-logs:
-	$(COMPOSE) logs -f app migrator nginx db
-
+	$(COMPOSE) up -d --build 
+graph_cp:
+	$(COMPOSE) cp app:/tmp/graph.dot ./graph.dot
 down:
 	$(COMPOSE) down -v
-
 stop:
 	$(COMPOSE) stop
+start:
+	$(COMPOSE) start
 
-# добавить сборку сертификатов
+logs-all:
+	$(COMPOSE) logs app migrator nginx db
+
+logs-migrator:
+	$(COMPOSE) logs  migrator
+
+logs-app:
+	$(COMPOSE) logs  app
+
+logs-nginx:
+	$(COMPOSE) logs  nginx
+	
+logs-db:
+	$(COMPOSE) logs  db
+
+
+cert:
+	set -a
+	source $(ENV_FILE)
+	set +a
+	: "$${DOMAIN:?DOMAIN is required in $(ENV_FILE)}"
+	mkdir -p nginx/ssl
+	openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 \
+	  -sha256 -days 365 -nodes \
+	  -keyout "nginx/ssl/$${DOMAIN}.key" \
+	  -out    "nginx/ssl/$${DOMAIN}.crt" \
+	  -subj "/CN=$${DOMAIN}" \
+	  -addext "subjectAltName=DNS:$${DOMAIN},DNS:localhost,IP:127.0.0.1"
+
+# 	  pg_dump "postgres://postgres:Qwaszx_1@localhost:5432/shopdb" --schema-only --no-owner > internal/infra/db/schema/000_schema_dump.sql

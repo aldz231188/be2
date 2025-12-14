@@ -5,6 +5,13 @@ sql:
       - internal/infra/db/migrations/*.up.sql
     queries:
       - internal/infra/db/queries
+    database:
+      uri: ${DB_URI}
+    rules:
+      - sqlc/db-prepare
+      - no-delete
+
+
     gen:
       go:
         package: sqlc_generated
@@ -23,3 +30,9 @@ sql:
             go_type:
               import: "time"
               type: "Time"
+
+rules:
+  - name: no-delete
+    message: "Не используем SELECT *"
+    rule: |
+      query.sql.contains("SELECT *")    

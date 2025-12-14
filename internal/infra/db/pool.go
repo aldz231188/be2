@@ -37,7 +37,7 @@ func NewPool(lc fx.Lifecycle, cfg config.Config, sec *config.Secrets) (*pgxpool.
 	return pool, nil
 }
 
-func buildPostgresDSN(cfg config.Config, pass string) string {
+func buildPostgresDSN(cfg config.Config, pass string) string { //ввынести?
 	u := &url.URL{
 		Scheme: "postgres",                       // или "postgresql"
 		User:   url.UserPassword(cfg.User, pass), // ← корректное кодирование user:pass

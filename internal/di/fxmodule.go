@@ -30,17 +30,16 @@ var App = fx.Options(
 		middleware.NewJWT,
 	),
 	fx.Provide(handlers.NewHandler),
-	fx.Invoke(router.NewServer),
+	fx.Invoke(router.RegisterServer),
 	fx.Provide(router.RegisterRoutes),
-	// fx.Invoke(func(g fx.DotGraph) {
-	// 	err := os.WriteFile("graph.dot", []byte(g), 0644)
-	// 	if err != nil {
-	// 		panic(err)
-	// 	}
-	// }),
+	fx.Invoke(func(g fx.DotGraph) {
+		path := "/tmp/graph.dot"
+		os.WriteFile(path, []byte(g), 0644)
+
+	}),
 )
 
-func newLogger() *slog.Logger {
+func newLogger() *slog.Logger { // вынести
 	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: true})
 	return slog.New(handler)
 }

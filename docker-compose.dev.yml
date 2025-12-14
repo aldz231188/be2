@@ -12,42 +12,37 @@ services:
     secrets:
       - db_password
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER:-app}
+      POSTGRES_DB: ${DB_NAME:-appdb}
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      # чтобы не зависеть от подстановки переменных на хосте — берем env внутри контейнера
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 3s
       retries: 10
-    # expose:
-    #   - "${DB_PORT}"
-    ports: ["${DB_PORT}:${DB_PORT}"]
+    ports:
+      # ВАЖНО: внутри контейнера postgres слушает 5432
+      - "${DB_PORT:-5432}:5432"
 
   migrator:
     image: migrate/migrate:latest
     depends_on:
       db:
         condition: service_healthy
-    command: [
-      "-path", "/migrations",
-      # все еще светятся секреты
-      "-database", "postgres://app:qwe@db:5432/appdb?sslmode=disable",
-      "up"
-    ]
-    # entrypoint: ["/bin/sh", "-lc"]
-    # command: |
-    #   set -euo pipefail
-    #   PASS="$(tr -d '\r\n' < /run/secrets/db_password)"
-    #   echo "Running migrations…"
-    #   exec /migrate -verbose \
-    #     -path /migrations \
-    #     -database "postgres://${DB_USER}:$PASS@db:${DB_PORT}/${DB_NAME}?sslmode=disable" \
-    #     up
+    secrets:
+      - db_password
+    # 2. Устанавливаем переменные окружения, которые нужны скрипту
+    environment:
+      # Эти переменные должны быть определены в .env.dev
+      DB_USER: ${DB_USER}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT} 
+    # 3. Монтируем наш скрипт как точку входа (entrypoint)
     volumes:
       - ./internal/infra/db/migrations:/migrations:ro
-    # secrets:
-    #   - db_password
+      - ./entrypoint.sh:/entrypoint.sh:ro # <-- Монтируем скрипт
+    entrypoint: ["/bin/sh", "/entrypoint.sh"] # <-- Запускаем скрипт
     restart: "on-failure"
 
   app:
@@ -67,9 +62,8 @@ services:
       DB_PASSWORD_FILE: /run/secrets/db_password
       JWT_SECRET_FILE: /run/secrets/jwt_secret
     expose:
-      - ${HTTP_PORT}
-    # ports: ["8080:8080"]
-    
+      - "${HTTP_PORT}"
+
   nginx:
     image: nginx:1.27-alpine
     container_name: nginx_gateway
@@ -78,8 +72,6 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
-      # - ./static:/var/www/static:ro     # если есть статика
     ports:
       - "80:80"
-      - "443:443"      # наружу торчит только Nginx
-    # networks можно оставить по умолчанию (default)
+      - "443:443"

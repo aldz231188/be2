@@ -89,7 +89,6 @@ digraph {
 		constructor_13 [shape=plaintext label="RegisterRoutes"];
 		"*http.ServeMux" [label=<*http.ServeMux>];
 	}
-	constructor_13 -> "fx.Lifecycle" [ltail=cluster_13];
 	constructor_13 -> "handlers.Handler" [ltail=cluster_13];
 	constructor_13 -> "*middleware.JWT" [ltail=cluster_13];
 }
