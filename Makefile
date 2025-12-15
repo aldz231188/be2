@@ -65,6 +65,7 @@ sqlc-vet:
 	sqlc vet
 
 sqlc-gen:
+	$(EXPORT_DB_URI)
 	sqlc generate
 
 sqlc: sqlc-vet sqlc-gen

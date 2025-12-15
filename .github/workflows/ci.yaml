@@ -44,7 +44,7 @@ jobs:
 
     env:
       # Внутри job’а сервис доступен через localhost и проброшенный порт
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/appdb?sslmode=disable
+      DB_URI: postgres://postgres:postgres@localhost:5432/appdb?sslmode=disable
 
     steps:
       - uses: actions/checkout@v4
@@ -61,6 +61,13 @@ jobs:
           # go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
           go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
+      - name: Run DB migrations
+        env:
+          DB_URI: postgres://postgres:postgres@localhost:5432/appdb?sslmode=disable
+        run: |
+          migrate -path ./internal/infra/db/migrations -database "$DB_URI" up
+
+
       - name: Generate SQL code
         run: |
           sqlc generate
@@ -71,11 +78,7 @@ jobs:
             pg_isready -h localhost -U postgres && break
             sleep 1
           done
-      - name: Run DB migrations
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/appdb?sslmode=disable
-        run: |
-          migrate -path ./internal/infra/db/migrations -database "$DATABASE_URL" up
+
 
       - name: Build
         run: go build ./...
