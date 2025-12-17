@@ -107,6 +107,9 @@ logs-nginx:
 logs-db:
 	$(COMPOSE) logs  db
 
+ci:
+	act -P ubuntu-latest=catthehacker/ubuntu:act-latest
+
 
 cert:
 	set -a
