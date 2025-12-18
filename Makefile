@@ -124,4 +124,6 @@ cert:
 	  -subj "/CN=$${DOMAIN}" \
 	  -addext "subjectAltName=DNS:$${DOMAIN},DNS:localhost,IP:127.0.0.1"
 
+# 	  openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256   -sha256 -days 365 -nodes   -keyout nginx/ssl/server.key   -out  nginx/ssl/server.crt   -subj "/CN=13.49.80.3"   -addext "subjectAltName=IP:13.49.80.3
+
 # 	  pg_dump "postgres://postgres:Qwaszx_1@localhost:5432/shopdb" --schema-only --no-owner > internal/infra/db/schema/000_schema_dump.sql

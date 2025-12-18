@@ -1,0 +1,74 @@
+
+secrets:
+  db_password:
+    file: ./../secrets/db_password.txt
+  jwt_secret:
+    file: ./../secrets/jwt_secret.txt
+
+services:
+  db:
+    image: postgres:16-alpine
+    secrets:
+      - db_password
+    environment:
+      POSTGRES_USER: ${DB_USER:-app}
+      POSTGRES_DB: ${DB_NAME:-appdb}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    healthcheck:
+      # чтобы не зависеть от подстановки переменных на хосте — берем env внутри контейнера
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      # ВАЖНО: внутри контейнера postgres слушает 5432
+      - "${DB_PORT:-5432}:5432"
+
+  migrator:
+    image: migrate/migrate:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    secrets:
+      - db_password
+    # 2. Устанавливаем переменные окружения, которые нужны скрипту
+    environment:
+      # Эти переменные должны быть определены в .env.dev
+      DB_USER: ${DB_USER}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT} 
+    # 3. Монтируем наш скрипт как точку входа (entrypoint)
+    volumes:
+      - ./internal/infra/db/migrations:/migrations:ro
+      - ./entrypoint.sh:/entrypoint.sh:ro # <-- Монтируем скрипт
+    entrypoint: ["/bin/sh", "/entrypoint.sh"] # <-- Запускаем скрипт
+    restart: "on-failure"
+
+  app:
+    image: ghcr.io/aldz231188/be2:latest 
+    restart: always
+    env_file:
+      - ../.env.prod
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    secrets:
+      - db_password
+      - jwt_secret
+    environment:
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+    expose:
+      - "${HTTP_PORT}"
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: nginx_gateway
+    depends_on:
+      - app
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    ports:
+      - "80:80"
+      - "443:443"
