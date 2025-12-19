@@ -127,7 +127,7 @@ jobs:
             # Заходим в папку проекта
             cd be2
             
-            # 1. Обновляем код (чтобы подтянуть новый docker-compose.prod.yaml если менялся)
+            # 1. Обновляем код (чтобы подтянуть новый docker-compose.prod.yml если менялся)
             git pull origin main
             
             # 2. Логинимся в реестр GitHub (чтобы скачать приватный образ)
@@ -137,10 +137,10 @@ jobs:
             # Для простоты пока считаем, что image скачается.
             
             # 3. Скачиваем свежий образ
-            docker compose -f docker-compose.prod.yaml pull app
+            docker compose -f docker-compose.prod.yml pull app
             
             # 4. Перезапускаем контейнеры
-            docker compose -f docker-compose.prod.yaml up -d
+            docker compose -f docker-compose.prod.yml up -d
             
             # 5. Чистим старые образы, чтобы не забить диск
             docker image prune -f

@@ -80,11 +80,22 @@ test:
 	go test ./...
 
 COMPOSE := docker compose -f docker-compose.dev.yml --env-file .env.dev -p myapp-dev
+COMPOSE_PROD := docker compose -f docker-compose.prod.yml --env-file ../.env.prod
+
+up-prod:
+	$(COMPOSE_PROD) up -d --build 
+down-prod:
+	$(COMPOSE_PROD) down -v
+stop-prod:
+	$(COMPOSE_PROD) stop
+start-prod:
+	$(COMPOSE_PROD) start
+logs-all-prod:
+	$(COMPOSE_PROD) logs app migrator nginx db
+
 
 up:
 	$(COMPOSE) up -d --build 
-graph_cp:
-	$(COMPOSE) cp app:/tmp/graph.dot ./graph.dot
 down:
 	$(COMPOSE) down -v
 stop:
@@ -107,6 +118,9 @@ logs-nginx:
 logs-db:
 	$(COMPOSE) logs  db
 
+graph_cp:
+	$(COMPOSE) cp app:/tmp/graph.dot ./graph.dot
+
 ci:
 	act -P ubuntu-latest=catthehacker/ubuntu:act-latest
 
@@ -124,6 +138,7 @@ cert:
 	  -subj "/CN=$${DOMAIN}" \
 	  -addext "subjectAltName=DNS:$${DOMAIN},DNS:localhost,IP:127.0.0.1"
 
-# 	  openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256   -sha256 -days 365 -nodes   -keyout nginx/ssl/server.key   -out  nginx/ssl/server.crt   -subj "/CN=13.49.80.3"   -addext "subjectAltName=IP:13.49.80.3
+cert-prod:
+	openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256   -sha256 -days 365 -nodes   -keyout nginx/ssl/server.key   -out  nginx/ssl/server.crt   -subj "/CN=13.50.194.95"   -addext "subjectAltName=IP:13.50.194.95"
 
 # 	  pg_dump "postgres://postgres:Qwaszx_1@localhost:5432/shopdb" --schema-only --no-owner > internal/infra/db/schema/000_schema_dump.sql

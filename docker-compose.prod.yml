@@ -67,7 +67,7 @@ services:
     depends_on:
       - app
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/conf.d:/etc/nginx/.prod.conf.d:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
     ports:
       - "80:80"
