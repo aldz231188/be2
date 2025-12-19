@@ -82,6 +82,8 @@ test:
 COMPOSE := docker compose -f docker-compose.dev.yml --env-file .env.dev -p myapp-dev
 COMPOSE_PROD := docker compose -f docker-compose.prod.yml --env-file ../.env.prod
 
+pull-prod:
+	$(COMPOSE_PROD) pull app
 up-prod:
 	$(COMPOSE_PROD) up -d --build 
 down-prod:
