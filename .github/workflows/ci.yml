@@ -127,8 +127,8 @@ jobs:
             # Заходим в папку проекта
             cd be2
             
-            # 1. Обновляем код (чтобы подтянуть новый docker-compose.prod.yml если менялся)
-            git pull origin main
+            # 1. Обновляем код (чтобы подтянуть новый docker-compose.prod.yaml если менялся)
+            git pull
             
             # 2. Логинимся в реестр GitHub (чтобы скачать приватный образ)
             # Используем GITHUB_TOKEN, но внутри Runner'а он недоступен напрямую в script,
