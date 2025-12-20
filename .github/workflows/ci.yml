@@ -143,7 +143,7 @@ jobs:
             
             # 4. Перезапускаем контейнеры
             # docker compose -f docker-compose.prod.yml up -d
-            make cert-prod
+            # make cert-prod
             make up-prod
             
             # 5. Чистим старые образы, чтобы не забить диск
