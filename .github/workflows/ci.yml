@@ -125,7 +125,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             # Заходим в папку проекта
-            cd be2
+            cd workdir/be2
             
             # 1. Обновляем код (чтобы подтянуть новый docker-compose.prod.yaml если менялся)
             git pull
