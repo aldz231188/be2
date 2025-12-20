@@ -3,7 +3,7 @@ SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
 ENV ?= dev
-ENV_FILE := ./../.env.$(ENV)
+ENV_FILE := ./../.env
 -include $(ENV_FILE)
 
 
@@ -75,8 +75,8 @@ lint:
 test:
 	go test ./...
 
-COMPOSE := docker compose -f docker-compose.dev.yml --env-file ./../.env.dev
-COMPOSE_PROD := docker compose -f docker-compose.prod.yml --env-file ../.env.prod
+COMPOSE := docker compose -f docker-compose.dev.yml --env-file ./../.env
+COMPOSE_PROD := docker compose -f docker-compose.prod.yml --env-file ./../.env
 
 pull-prod:
 	$(COMPOSE_PROD) pull app
@@ -128,15 +128,15 @@ cert:
 	source $(ENV_FILE)
 	set +a
 	: "$${DOMAIN:?DOMAIN is required in $(ENV_FILE)}"
-	mkdir -p nginx/ssl
+	mkdir -p ../nginx/ssl
 	openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 \
 	  -sha256 -days 365 -nodes \
-	  -keyout "nginx/ssl/server.key" \
-	  -out    "nginx/ssl/server.crt" \
+	  -keyout "../nginx/ssl/server.key" \
+	  -out    "../nginx/ssl/server.crt" \
 	  -subj "/CN=$${DOMAIN}" \
 	  -addext "subjectAltName=DNS:$${DOMAIN},DNS:localhost,IP:127.0.0.1"
 
 cert-prod:
-	openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256   -sha256 -days 365 -nodes   -keyout nginx/ssl/server.key   -out  nginx/ssl/server.crt   -subj "/CN=13.50.194.95"   -addext "subjectAltName=IP:13.50.194.95"
+	openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256   -sha256 -days 365 -nodes   -keyout ../nginx/ssl/server.key   -out  ../nginx/ssl/server.crt   -subj "/CN=13.50.194.95"   -addext "subjectAltName=IP:13.50.194.95"
 
 # 	  pg_dump "postgres://postgres:Qwaszx_1@localhost:5432/shopdb" --schema-only --no-owner > internal/infra/db/schema/000_schema_dump.sql

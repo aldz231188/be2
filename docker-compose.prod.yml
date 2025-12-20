@@ -33,7 +33,7 @@ services:
       - db_password
     # 2. Устанавливаем переменные окружения, которые нужны скрипту
     environment:
-      # Эти переменные должны быть определены в .env.dev
+      # Эти переменные должны быть определены в .env
       DB_USER: ${DB_USER}
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT} 
