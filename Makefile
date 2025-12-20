@@ -3,15 +3,11 @@ SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
 ENV ?= dev
-ENV_FILE := .env.$(ENV)
+ENV_FILE := ./../.env.$(ENV)
 -include $(ENV_FILE)
 
-# DB_USER    ?= app
-# DB_HOST_OUTSIDE    ?= localhost
-# DB_PORT    ?= 5432
-# DB_NAME    ?= appdb
-# DB_SSLMODE ?= disable
-DB_PASSWORD_FILE ?= ./secrets/db_password.txt
+
+DB_PASSWORD_FILE ?= ./../secrets/db_password.txt
 
 define EXPORT_DB_URI
 [[ -f "$(DB_PASSWORD_FILE)" ]] || { echo "Missing password file: $(DB_PASSWORD_FILE)"; exit 1; }
@@ -79,7 +75,7 @@ lint:
 test:
 	go test ./...
 
-COMPOSE := docker compose -f docker-compose.dev.yml --env-file .env.dev -p myapp-dev
+COMPOSE := docker compose -f docker-compose.dev.yml --env-file ./../.env.dev
 COMPOSE_PROD := docker compose -f docker-compose.prod.yml --env-file ../.env.prod
 
 pull-prod:
@@ -135,8 +131,8 @@ cert:
 	mkdir -p nginx/ssl
 	openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:P-256 \
 	  -sha256 -days 365 -nodes \
-	  -keyout "nginx/ssl/$${DOMAIN}.key" \
-	  -out    "nginx/ssl/$${DOMAIN}.crt" \
+	  -keyout "nginx/ssl/server.key" \
+	  -out    "nginx/ssl/server.crt" \
 	  -subj "/CN=$${DOMAIN}" \
 	  -addext "subjectAltName=DNS:$${DOMAIN},DNS:localhost,IP:127.0.0.1"
 

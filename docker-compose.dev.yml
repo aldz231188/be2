@@ -1,9 +1,9 @@
 
 secrets:
   db_password:
-    file: ./secrets/db_password.txt
+    file: ./../secrets/db_password.txt
   jwt_secret:
-    file: ./secrets/jwt_secret.txt
+    file: ./../secrets/jwt_secret.txt
 
 services:
   db:
@@ -50,7 +50,7 @@ services:
       dockerfile: Dockerfile
       target: dev
     env_file:
-      - .env.dev
+      - ./../.env.dev
     depends_on:
       migrator:
         condition: service_completed_successfully
@@ -69,8 +69,8 @@ services:
     depends_on:
       - app
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./../nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./../nginx/ssl:/etc/nginx/ssl:ro
     ports:
       - "80:80"
       - "443:443"

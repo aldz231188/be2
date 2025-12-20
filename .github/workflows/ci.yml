@@ -45,7 +45,7 @@ jobs:
       # Сначала ждем БД, потом накатываем миграции
       - name: Wait for DB
         run: |
-          for i in {1..30}; do
+          for i in {1..10}; do
             pg_isready -h localhost -U postgres && break
             sleep 1
           done
