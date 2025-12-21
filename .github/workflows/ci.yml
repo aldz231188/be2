@@ -138,12 +138,10 @@ jobs:
             
             # 3. Скачиваем свежий образ
             # docker compose -f docker-compose.prod.yml pull app
-            make pull-prod
+            # make pull-prod
 
             
             # 4. Перезапускаем контейнеры
-            # docker compose -f docker-compose.prod.yml up -d
-            # make cert-prod
             make up-prod
             
             # 5. Чистим старые образы, чтобы не забить диск

@@ -44,10 +44,12 @@ services:
     restart: "on-failure"
 
   app:
+    image: ghcr.io/aldz231188/be2:latest 
     build:
       context: .
       dockerfile: Dockerfile
       target: dev
+    restart: ${APP_RESTART_POLICY:-"no"}
     env_file:
       - .env
     depends_on:
@@ -70,6 +72,8 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/templates
       - ./nginx/ssl:/etc/nginx/ssl:ro
+    environment:
+      - NGINX_HOST=${DOMAIN}
     ports:
       - "80:80"
       - "443:443"

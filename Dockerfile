@@ -32,6 +32,7 @@ COPY --from=build --chown=nonroot:nonroot /out/app /app
 USER nonroot:nonroot
 
 ENTRYPOINT ["/app"]
+
 FROM gcr.io/distroless/static-debian12 AS dev
 
 # Настройки среды
