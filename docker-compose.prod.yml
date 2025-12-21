@@ -1,9 +1,9 @@
 
 secrets:
   db_password:
-    file: ./../secrets/db_password.txt
+    file: ${DB_PASSWORD_FILE}
   jwt_secret:
-    file: ./../secrets/jwt_secret.txt
+    file: ${JWT_SECRET_FILE}
 
 services:
   db:
@@ -39,7 +39,7 @@ services:
       DB_PORT: ${DB_PORT} 
     # 3. Монтируем наш скрипт как точку входа (entrypoint)
     volumes:
-      - ./internal/infra/db/migrations:/migrations:ro
+      - ${MIGR_DIR}:/migrations:ro
       - ./entrypoint.sh:/entrypoint.sh:ro # <-- Монтируем скрипт
     entrypoint: ["/bin/sh", "/entrypoint.sh"] # <-- Запускаем скрипт
     restart: "on-failure"
@@ -48,7 +48,7 @@ services:
     image: ghcr.io/aldz231188/be2:latest 
     restart: always
     env_file:
-      - ./../.env
+      - .env
     depends_on:
       migrator:
         condition: service_completed_successfully
@@ -67,8 +67,11 @@ services:
     depends_on:
       - app
     volumes:
-      - ./../nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./../nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/conf.d:/etc/nginx/templates
+      - ./nginx/ssl:/etc/nginx/ssl:ro
     ports:
       - "80:80"
       - "443:443"
+
+
+

@@ -1,15 +1,19 @@
-secrets/
-bin/
-!secrets/.gitkeep 
-.env
 
-# TLS / SSL
+bin/
+
+# Секреты и локальные настройки
+.env
+.env.*.local
+
+# Папка с файлами паролей
+secrets/*
+!secrets/.gitkeep
+
+# SSL сертификаты (они должны генерироваться при деплое или локально)
+
+# !nginx/conf.d/.gitkeep
+!nginx/ssl/.gitkeep
 nginx/ssl/*.key
 nginx/ssl/*.crt
-nginx/ssl/*-key.pem
-nginx/ssl/*.p12
-nginx/ssl/*.pfx
-nginx/ssl/*.csr
-nginx/ssl/*.srl
-*rootCA-key.pem
-*rootCA.pem
+nginx/ssl/*.pem
+
