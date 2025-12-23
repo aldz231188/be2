@@ -124,9 +124,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           envs: GITHUB_TOKEN, GITHUB_ACTOR
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_ACTOR: ${{ github.actor }}
+
+
           script: |
             # Заходим в папку проекта
             cd workdir/be2
@@ -152,3 +151,6 @@ jobs:
             # 5. Чистим старые образы, чтобы не забить диск
             docker logout ghcr.io
             docker image prune -f
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
