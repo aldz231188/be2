@@ -18,7 +18,6 @@ endef
 # 	$(eval DB_URI := postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST_OUTSIDE):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE))
 # endef
 
-# MIGR_DIR=./internal/infra/db/migrations
 
 .PHONY: tidy build run sqlc lint test up down
 .PHONY: migrate-create migrate-up migrate-down migrate-version
@@ -42,8 +41,6 @@ migrate-force:
 
 
 
-
-
 tidy:
 	go mod tidy
 
@@ -56,8 +53,6 @@ build:
 # 	JWT_SECRET_FILE="./secrets/jwt_secret.txt" $(BIN)
 
 
-# sqlc:
-# 	sqlc generate
 
 sqlc: sqlc-vet sqlc-gen
 
@@ -79,21 +74,6 @@ test:
 	go test ./...
 
 COMPOSE := docker compose -f docker-compose.yml 
-# COMPOSE_PROD := docker compose -f docker-compose.prod.yml
-
-# pull-prod:
-# 	$(COMPOSE_PROD) pull app
-# up-prod:
-# 	$(COMPOSE_PROD) up -d --build 
-# down-prod:
-# 	$(COMPOSE_PROD) down -v
-# stop-prod:
-# 	$(COMPOSE_PROD) stop
-# start-prod:
-# 	$(COMPOSE_PROD) start
-# logs-all-prod:
-# 	$(COMPOSE_PROD) logs app migrator nginx db
-
 
 up-prod:
 	$(COMPOSE) pull app

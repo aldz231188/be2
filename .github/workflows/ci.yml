@@ -123,6 +123,10 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+          envs: GITHUB_TOKEN, GITHUB_ACTOR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
           script: |
             # Заходим в папку проекта
             cd workdir/be2
@@ -135,6 +139,7 @@ jobs:
             # поэтому здесь просто скачиваем, предполагая, что пакет публичный.
             # ЕСЛИ ПАКЕТ ПРИВАТНЫЙ: нужно создать PAT (Personal Access Token) и добавить его в secrets сервера.
             # Для простоты пока считаем, что image скачается.
+            echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
             
             # 3. Скачиваем свежий образ
             # docker compose -f docker-compose.prod.yml pull app
@@ -145,4 +150,5 @@ jobs:
             make up-prod
             
             # 5. Чистим старые образы, чтобы не забить диск
+            docker logout ghcr.io
             docker image prune -f
