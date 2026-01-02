@@ -1,11 +1,3 @@
-// @title       be2 API
-// @version     1.0
-// @description Internal API
-// @BasePath    /
-// @securityDefinitions.apikey BearerAuth
-// @in          header
-// @name        Authorization
-
 package main
 
 import (
@@ -19,7 +11,8 @@ import (
 func main() {
 	startCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
-	app := fx.New(di.BFFApp)
+
+	app := fx.New(di.AuthApp)
 	if err := app.Start(startCtx); err != nil {
 		log.Fatal(err)
 	}

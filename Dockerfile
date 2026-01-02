@@ -12,11 +12,13 @@ RUN go mod download
 
 COPY . .
 
+ARG APP_CMD=./cmd/server
+
 # Сборка бинарника
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -trimpath -ldflags="-s -w" -o /out/app ./cmd/server
+    go build -trimpath -ldflags="-s -w" -o /out/app ${APP_CMD:-./cmd/server}
 
 # --- Stage 2: Final (Production) ---
 # Используем distroless для безопасности и минимального размера (всего ~2MB + ваш бинарник)

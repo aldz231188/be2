@@ -2,6 +2,8 @@ package di
 
 import (
 	"be2/internal/app"
+	"be2/internal/grpc/authclient"
+	"be2/internal/grpc/authserver"
 	router "be2/internal/http"
 	"be2/internal/http/middleware"
 	"be2/internal/http/v1/handlers"
@@ -11,7 +13,7 @@ import (
 	"os"
 )
 
-var App = fx.Options(
+var BFFApp = fx.Options(
 	db.Module,
 	fx.Provide(
 		newLogger,
@@ -24,9 +26,10 @@ var App = fx.Options(
 			fx.As(new(app.ClientService)),
 		),
 		fx.Annotate(
-			app.NewAuthService,
+			authclient.NewAuthClient,
 			fx.As(new(app.AuthService)),
 		),
+		authclient.LoadConfig,
 		middleware.NewJWT,
 	),
 	fx.Provide(handlers.NewHandler),
@@ -37,6 +40,20 @@ var App = fx.Options(
 		os.WriteFile(path, []byte(g), 0644)
 
 	}),
+)
+
+var AuthApp = fx.Options(
+	db.Module,
+	fx.Provide(
+		newLogger,
+		fx.Annotate(
+			app.NewAuthService,
+			fx.As(new(app.AuthService)),
+		),
+		authserver.LoadConfig,
+		authserver.NewServer,
+	),
+	fx.Invoke(authserver.Register),
 )
 
 func newLogger() *slog.Logger { // вынести

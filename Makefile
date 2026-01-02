@@ -46,7 +46,10 @@ tidy:
 
 
 build:
-	go build -o app ./cmd/server
+	go build -o bff ./cmd/server
+
+build-auth:
+	go build -o auth ./cmd/authserver
 
 # run:
 # 	DB_PASSWORD_FILE="./secrets/db_password.txt" \
@@ -88,13 +91,16 @@ start:
 	$(COMPOSE) start
 
 logs-all:
-	$(COMPOSE) logs app migrator nginx db
+	$(COMPOSE) logs bff auth migrator nginx db
 
 logs-migrator:
 	$(COMPOSE) logs  migrator
 
-logs-app:
-	$(COMPOSE) logs  app
+logs-bff:
+	$(COMPOSE) logs  bff
+
+logs-auth:
+	$(COMPOSE) logs  auth
 
 logs-nginx:
 	$(COMPOSE) logs  nginx
@@ -103,7 +109,7 @@ logs-db:
 	$(COMPOSE) logs  db
 
 graph_cp:
-	$(COMPOSE) cp app:/tmp/graph.dot ./graph.dot
+	$(COMPOSE) cp bff:/tmp/graph.dot ./graph.dot
 
 ci:
 	act -P ubuntu-latest=catthehacker/ubuntu:act-latest

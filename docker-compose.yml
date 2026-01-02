@@ -39,13 +39,40 @@ services:
     entrypoint: ["/bin/sh", "/entrypoint.sh"] # <-- Запускаем скрипт
     restart: "on-failure"
 
-  app:
-    image: ghcr.io/aldz231188/be2:latest 
+  bff:
+    image: ghcr.io/aldz231188/be2-bff:latest 
     build:
       context: .
       dockerfile: Dockerfile
       target: dev
+      args:
+        APP_CMD: ./cmd/server
     restart: ${APP_RESTART_POLICY:-"no"}
+    env_file:
+      - .env
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      auth:
+        condition: service_started
+    secrets:
+      - db_password
+      - jwt_secret
+    environment:
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+    expose:
+      - "${HTTP_PORT}"
+
+  auth:
+    image: ghcr.io/aldz231188/be2-auth:latest 
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev
+      args:
+        APP_CMD: ./cmd/authserver
+    restart: ${AUTH_RESTART_POLICY:-"no"}
     env_file:
       - .env
     depends_on:
@@ -58,13 +85,13 @@ services:
       DB_PASSWORD_FILE: /run/secrets/db_password
       JWT_SECRET_FILE: /run/secrets/jwt_secret
     expose:
-      - "${HTTP_PORT}"
+      - "${AUTH_GRPC_PORT:-9090}"
 
   nginx:
     image: nginx:1.27-alpine
     container_name: nginx_gateway
     depends_on:
-      - app
+      - bff
     volumes:
       - ./nginx/conf.d:/etc/nginx/templates
       - ./nginx/ssl:/etc/nginx/ssl:ro
