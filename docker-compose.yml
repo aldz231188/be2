@@ -1,18 +1,20 @@
 secrets:
-  db_password:
-    file: ${DB_PASSWORD_FILE}
+  db_password_bff:
+    file: ${DB_PASSWORD_BFF_FILE}
+  db_password_auth:
+    file: ${DB_PASSWORD_AUTH_FILE}
   jwt_secret:
     file: ${JWT_SECRET_FILE}
 
 services:
-  db:
+  db_bff:
     image: postgres:16-alpine
     secrets:
-      - db_password
+      - db_password_bff
     environment:
-      POSTGRES_USER: ${DB_USER:-app}
-      POSTGRES_DB: ${DB_NAME:-appdb}
-      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_USER: ${DB_BFF_USER:-app}
+      POSTGRES_DB: ${DB_BFF_NAME:-bffdb}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password_bff
     healthcheck:
       # чтобы не зависеть от подстановки переменных на хосте — берем env внутри контейнера
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
@@ -21,68 +23,119 @@ services:
       retries: 10
     ports:
       # ВАЖНО: внутри контейнера postgres слушает 5432
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_BFF_PORT:-5432}:5432"
 
-  migrator:
+  db_auth:
+    image: postgres:16-alpine
+    secrets:
+      - db_password_auth
+    environment:
+      POSTGRES_USER: ${DB_AUTH_USER:-app}
+      POSTGRES_DB: ${DB_AUTH_NAME:-authdb}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password_auth
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "${DB_AUTH_PORT:-5433}:5432"
+
+  migrator_bff:
     image: migrate/migrate:latest
     depends_on:
-      db:
+      db_bff:
         condition: service_healthy
     secrets:
-      - db_password
+      - db_password_bff
     env_file:
       - .env
+    environment:
+      DB_HOST: db_bff
+      DB_PORT: 5432
+      DB_USER: ${DB_BFF_USER:-app}
+      DB_NAME: ${DB_BFF_NAME:-bffdb}
+      DB_SSLMODE: ${DB_BFF_SSLMODE:-disable}
+      DB_PASSWORD_FILE: /run/secrets/db_password_bff
     # 3. Монтируем наш скрипт как точку входа (entrypoint)
     volumes:
-      - ${MIGR_DIR}:/migrations:ro
+      - ${MIGR_BFF_DIR}:/migrations:ro
       - ./entrypoint.sh:/entrypoint.sh:ro # <-- Монтируем скрипт
     entrypoint: ["/bin/sh", "/entrypoint.sh"] # <-- Запускаем скрипт
     restart: "on-failure"
 
+  migrator_auth:
+    image: migrate/migrate:latest
+    depends_on:
+      db_auth:
+        condition: service_healthy
+    secrets:
+      - db_password_auth
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db_auth
+      DB_PORT: 5432
+      DB_USER: ${DB_AUTH_USER:-app}
+      DB_NAME: ${DB_AUTH_NAME:-authdb}
+      DB_SSLMODE: ${DB_AUTH_SSLMODE:-disable}
+      DB_PASSWORD_FILE: /run/secrets/db_password_auth
+    volumes:
+      - ${MIGR_AUTH_DIR}:/migrations:ro
+      - ./entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    restart: "on-failure"
+
   bff:
-    image: ghcr.io/aldz231188/be2-bff:latest 
+    image: ghcr.io/aldz231188/be2-bff:latest
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: services/bff/Dockerfile
       target: dev
-      args:
-        APP_CMD: ./cmd/server
     restart: ${APP_RESTART_POLICY:-"no"}
     env_file:
       - .env
     depends_on:
-      migrator:
+      migrator_bff:
         condition: service_completed_successfully
       auth:
         condition: service_started
-    secrets:
-      - db_password
-      - jwt_secret
     environment:
-      DB_PASSWORD_FILE: /run/secrets/db_password
+      DB_HOST: db_bff
+      DB_PORT: 5432
+      DB_USER: ${DB_BFF_USER:-app}
+      DB_NAME: ${DB_BFF_NAME:-bffdb}
+      DB_SSLMODE: ${DB_BFF_SSLMODE:-disable}
+      DB_PASSWORD_FILE: /run/secrets/db_password_bff
       JWT_SECRET_FILE: /run/secrets/jwt_secret
     expose:
       - "${HTTP_PORT}"
+    secrets:
+      - db_password_bff
+      - jwt_secret
 
   auth:
-    image: ghcr.io/aldz231188/be2-auth:latest 
+    image: ghcr.io/aldz231188/be2-auth:latest
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: services/auth/Dockerfile
       target: dev
-      args:
-        APP_CMD: ./cmd/authserver
     restart: ${AUTH_RESTART_POLICY:-"no"}
     env_file:
       - .env
     depends_on:
-      migrator:
+      migrator_auth:
         condition: service_completed_successfully
     secrets:
-      - db_password
+      - db_password_auth
       - jwt_secret
     environment:
-      DB_PASSWORD_FILE: /run/secrets/db_password
+      DB_HOST: db_auth
+      DB_PORT: 5432
+      DB_USER: ${DB_AUTH_USER:-app}
+      DB_NAME: ${DB_AUTH_NAME:-authdb}
+      DB_SSLMODE: ${DB_AUTH_SSLMODE:-disable}
+      DB_PASSWORD_FILE: /run/secrets/db_password_auth
       JWT_SECRET_FILE: /run/secrets/jwt_secret
     expose:
       - "${AUTH_GRPC_PORT:-9090}"

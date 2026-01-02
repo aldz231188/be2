@@ -6,50 +6,71 @@ SHELL := /bin/bash
 ENV_FILE := .env
 -include $(ENV_FILE)
 
-define EXPORT_DB_URI
-[[ -f "$(DB_PASSWORD_FILE)" ]] || { echo "Missing password file: $(DB_PASSWORD_FILE)"; exit 1; }
-DB_PASSWORD="$$(tr -d '\n' < "$(DB_PASSWORD_FILE)")"
-export DB_URI="postgres://$(DB_USER):$${DB_PASSWORD}@$(DB_HOST_OUTSIDE):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)"
+define EXPORT_BFF_DB_URI
+[[ -f "$(DB_PASSWORD_BFF_FILE)" ]] || { echo "Missing password file: $(DB_PASSWORD_BFF_FILE)"; exit 1; }
+DB_PASSWORD="$$(tr -d '\n' < "$(DB_PASSWORD_BFF_FILE)")"
+export DB_URI="postgres://$(DB_BFF_USER):$${DB_PASSWORD}@$(DB_HOST_OUTSIDE):$(DB_BFF_PORT)/$(DB_BFF_NAME)?sslmode=$(DB_BFF_SSLMODE)"
 endef
 
-# define SETUP_DB_URI
-# 	@[ -f "$(DB_PASSWORD_FILE)" ] || { echo "❌ Err: Missing $(DB_PASSWORD_FILE)"; exit 1; }
-# 	$(eval DB_PASSWORD := $(shell cat $(DB_PASSWORD_FILE)))
-# 	$(eval DB_URI := postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST_OUTSIDE):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE))
-# endef
+define EXPORT_AUTH_DB_URI
+[[ -f "$(DB_PASSWORD_AUTH_FILE)" ]] || { echo "Missing password file: $(DB_PASSWORD_AUTH_FILE)"; exit 1; }
+DB_PASSWORD="$$(tr -d '\n' < "$(DB_PASSWORD_AUTH_FILE)")"
+export DB_URI="postgres://$(DB_AUTH_USER):$${DB_PASSWORD}@$(DB_HOST_OUTSIDE):$(DB_AUTH_PORT)/$(DB_AUTH_NAME)?sslmode=$(DB_AUTH_SSLMODE)"
+endef
 
 
-.PHONY: tidy build run sqlc lint test up down
-.PHONY: migrate-create migrate-up migrate-down migrate-version
+.PHONY: tidy build build-auth run sqlc lint test up down
+.PHONY: migrate-create-bff migrate-up-bff migrate-down-bff
+.PHONY: migrate-create-auth migrate-up-auth migrate-down-auth
 
-migrate-create:
-	@test -n "$(name)" || (echo "Usage: make migrate-create name=add_table"; exit 1)
-	migrate create -ext sql -dir $(MIGR_DIR) -format 20060102150405 $(name)
+migrate-create-bff:
+	@test -n "$(name)" || (echo "Usage: make migrate-create-bff name=add_table"; exit 1)
+	migrate create -ext sql -dir $(MIGR_BFF_DIR) -format 20060102150405 $(name)
 
-migrate-up:
-	$(EXPORT_DB_URI)
-	migrate -path $(MIGR_DIR) -database $${DB_URI} up
+migrate-up-bff:
+	$(EXPORT_BFF_DB_URI)
+	migrate -path $(MIGR_BFF_DIR) -database $${DB_URI} up
 
-migrate-down:
-	$(EXPORT_DB_URI)
-	migrate -path $(MIGR_DIR) -database $${DB_URI} down 1
+migrate-down-bff:
+	$(EXPORT_BFF_DB_URI)
+	migrate -path $(MIGR_BFF_DIR) -database $${DB_URI} down 1
 
-migrate-force:
-	$(EXPORT_DB_URI)
-	@test -n "$(version)" || (echo "Usage: make migrate-force version=v№"; exit 1)
-	migrate -path $(MIGR_DIR) -database $${DB_URI} force $(version)
+migrate-force-bff:
+	$(EXPORT_BFF_DB_URI)
+	@test -n "$(version)" || (echo "Usage: make migrate-force-bff version=v№"; exit 1)
+	migrate -path $(MIGR_BFF_DIR) -database $${DB_URI} force $(version)
+
+migrate-create-auth:
+	@test -n "$(name)" || (echo "Usage: make migrate-create-auth name=add_table"; exit 1)
+	migrate create -ext sql -dir $(MIGR_AUTH_DIR) -format 20060102150405 $(name)
+
+migrate-up-auth:
+	$(EXPORT_AUTH_DB_URI)
+	migrate -path $(MIGR_AUTH_DIR) -database $${DB_URI} up
+
+migrate-down-auth:
+	$(EXPORT_AUTH_DB_URI)
+	migrate -path $(MIGR_AUTH_DIR) -database $${DB_URI} down 1
+
+migrate-force-auth:
+	$(EXPORT_AUTH_DB_URI)
+	@test -n "$(version)" || (echo "Usage: make migrate-force-auth version=v№"; exit 1)
+	migrate -path $(MIGR_AUTH_DIR) -database $${DB_URI} force $(version)
 
 
 
 tidy:
-	go mod tidy
+	go work sync
+	( cd contracts && go mod tidy )
+	( cd services/bff && go mod tidy )
+	( cd services/auth && go mod tidy )
 
 
 build:
-	go build -o bff ./cmd/server
+	go build -o bff ./services/bff/cmd/server
 
 build-auth:
-	go build -o auth ./cmd/authserver
+	go build -o auth ./services/auth/cmd/authserver
 
 # run:
 # 	DB_PASSWORD_FILE="./secrets/db_password.txt" \
@@ -57,15 +78,23 @@ build-auth:
 
 
 
-sqlc: sqlc-vet sqlc-gen
+sqlc: sqlc-vet-bff sqlc-vet-auth sqlc-gen-bff sqlc-gen-auth
 
-sqlc-vet:
-	$(EXPORT_DB_URI)
-	sqlc vet
+sqlc-vet-bff:
+	$(EXPORT_BFF_DB_URI)
+	sqlc vet -f services/bff/sqlc.yml
 
-sqlc-gen:
-	$(EXPORT_DB_URI)
-	sqlc generate
+sqlc-vet-auth:
+	$(EXPORT_AUTH_DB_URI)
+	sqlc vet -f services/auth/sqlc.yml
+
+sqlc-gen-bff:
+	$(EXPORT_BFF_DB_URI)
+	sqlc generate -f services/bff/sqlc.yml
+
+sqlc-gen-auth:
+	$(EXPORT_AUTH_DB_URI)
+	sqlc generate -f services/auth/sqlc.yml
 
 
 
@@ -74,7 +103,8 @@ lint:
 	golangci-lint run
 
 test:
-	go test ./...
+	( cd services/bff && go test ./... )
+	( cd services/auth && go test ./... )
 
 COMPOSE := docker compose -f docker-compose.yml 
 
@@ -91,7 +121,7 @@ start:
 	$(COMPOSE) start
 
 logs-all:
-	$(COMPOSE) logs bff auth migrator nginx db
+	$(COMPOSE) logs bff auth migrator_bff migrator_auth nginx db_bff db_auth
 
 logs-migrator:
 	$(COMPOSE) logs  migrator
@@ -106,7 +136,7 @@ logs-nginx:
 	$(COMPOSE) logs  nginx
 	
 logs-db:
-	$(COMPOSE) logs  db
+	$(COMPOSE) logs  db_bff db_auth
 
 graph_cp:
 	$(COMPOSE) cp bff:/tmp/graph.dot ./graph.dot
