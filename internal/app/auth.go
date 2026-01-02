@@ -23,6 +23,7 @@ const (
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrInvalidToken       = errors.New("invalid token")
+	ErrUserAlreadyExists  = errors.New("user already exists")
 )
 
 type TokenPair struct {
@@ -94,6 +95,9 @@ func (s *authService) Register(ctx context.Context, username, password string) (
 
 	user, err := s.users.CreateUser(ctx, domain.User{Username: username, PasswordHash: string(hash)})
 	if err != nil {
+		if errors.Is(err, domain.ErrUserAlreadyExists) {
+			return TokenPair{}, ErrUserAlreadyExists
+		}
 		return TokenPair{}, err
 	}
 

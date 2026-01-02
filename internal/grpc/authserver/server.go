@@ -2,7 +2,6 @@ package authserver
 
 import (
 	"be2/internal/app"
-	"be2/internal/domain"
 	"be2/internal/grpc/authpb"
 	"context"
 	"errors"
@@ -92,7 +91,7 @@ func (s *Server) Register(ctx context.Context, req *authpb.RegisterRequest) (*au
 		switch {
 		case errors.Is(err, app.ErrInvalidCredentials):
 			return nil, status.Error(codes.InvalidArgument, "invalid credentials")
-		case errors.Is(err, domain.ErrUserAlreadyExists):
+		case errors.Is(err, app.ErrUserAlreadyExists):
 			return nil, status.Error(codes.AlreadyExists, "user already exists")
 		default:
 			return nil, status.Error(codes.Internal, err.Error())

@@ -93,7 +93,7 @@ func (h *Handler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		status := http.StatusInternalServerError
 		switch {
-		case errors.Is(err, domain.ErrUserAlreadyExists):
+		case errors.Is(err, app.ErrUserAlreadyExists):
 			status = http.StatusConflict
 			h.respondError(w, status, "user already exists", nil)
 			return

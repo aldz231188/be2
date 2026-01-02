@@ -2,7 +2,6 @@ package authclient
 
 import (
 	"be2/internal/app"
-	"be2/internal/domain"
 	"be2/internal/grpc/authpb"
 	"context"
 	"log/slog"
@@ -167,7 +166,7 @@ func mapRegisterError(err error) error {
 
 	switch s.Code() {
 	case codes.AlreadyExists:
-		return domain.ErrUserAlreadyExists
+		return app.ErrUserAlreadyExists
 	case codes.InvalidArgument:
 		return app.ErrInvalidCredentials
 	case codes.Unauthenticated:
