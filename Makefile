@@ -58,11 +58,13 @@ sqlc: sqlc-vet sqlc-gen
 
 sqlc-vet:
 	$(EXPORT_DB_URI)
-	sqlc vet
+# 	cd internal && sqlc vet
+	cd services/clientsvc && sqlc vet
 
 sqlc-gen:
 	$(EXPORT_DB_URI)
-	sqlc generate
+# 	cd internal && sqlc generate
+	cd services/clientsvc && sqlc generate
 
 
 
@@ -88,19 +90,19 @@ start:
 	$(COMPOSE) start
 
 logs-all:
-	$(COMPOSE) logs app migrator nginx db
+	$(COMPOSE) logs app migrator nginx db clientsvc clientsvc_db clientsvc_migrator
 
 logs-migrator:
-	$(COMPOSE) logs  migrator
+	$(COMPOSE) logs  migrator clientsvc_migrator
 
 logs-app:
-	$(COMPOSE) logs  app
+	$(COMPOSE) logs  app clientsvc
 
 logs-nginx:
 	$(COMPOSE) logs  nginx
 	
 logs-db:
-	$(COMPOSE) logs  db
+	$(COMPOSE) logs  db clientsvc_db
 
 graph_cp:
 	$(COMPOSE) cp app:/tmp/graph.dot ./graph.dot

@@ -9,7 +9,7 @@ DB_PASS="$(tr -d '\r\n' < /run/secrets/db_password)"
 # 2. Собираем строку подключения с использованием переменных окружения,
 # которые уже определены в .env, и прочитанного пароля.
 # $DB_USER, $DB_NAME, $DB_PORT должны быть определены в .env
-DB_URL="postgres://${DB_USER}:${DB_PASS}@db:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}"
+DB_URL="postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSLMODE}"
 
 echo "Running database migrations..."
 echo DB_URL

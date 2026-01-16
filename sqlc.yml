@@ -1,38 +1,38 @@
-version: "2"
-sql:
-  - engine: postgresql
-    schema:
-      - internal/infra/db/migrations/*.up.sql
-    queries:
-      - internal/infra/db/queries
-    database:
-      uri: ${DB_URI}
-    rules:
-      - sqlc/db-prepare
-      - no-delete
+# version: "2"
+# sql:
+#   - engine: postgresql
+#     schema:
+#       - services/clientsvc/infra/db/migrations/*.up.sql
+#     queries:
+#       - services/clientsvc/infra/db/queries
+#     database:
+#       uri: ${DB_URI}
+#     rules:
+#       - sqlc/db-prepare
+#       - no-delete
 
 
-    gen:
-      go:
-        package: sqlc_generated
-        out: internal/infra/db/sqlc_generated
-        sql_package: pgx/v5
-        # emit_json_tags: true
-        emit_pointers_for_null_types: false
-        emit_empty_slices: true
-        overrides:
-          - db_type: "uuid"
-            go_type:
-              import: "github.com/google/uuid"
-              package: "uuid"
-              type: "UUID"
-          - db_type: "date"
-            go_type:
-              import: "time"
-              type: "Time"
+#     gen:
+#       go:
+#         package: sqlc_generated
+#         out: services/clientsvc/infra/db/sqlc_generated
+#         sql_package: pgx/v5
+#         # emit_json_tags: true
+#         emit_pointers_for_null_types: false
+#         emit_empty_slices: true
+#         overrides:
+#           - db_type: "uuid"
+#             go_type:
+#               import: "github.com/google/uuid"
+#               package: "uuid"
+#               type: "UUID"
+#           - db_type: "date"
+#             go_type:
+#               import: "time"
+#               type: "Time"
 
-rules:
-  - name: no-delete
-    message: "Не используем SELECT *"
-    rule: |
-      query.sql.contains("SELECT *")    
+# rules:
+#   - name: no-delete
+#     message: "Не используем SELECT *"
+#     rule: |
+#       query.sql.contains("SELECT *")    

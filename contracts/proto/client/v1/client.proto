@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package client.v1;
+option go_package = "be2/contracts/gen/client/v1;clientv1";
+
+import "google/protobuf/empty.proto";
+
+service ClientService {
+  rpc CreateClient(CreateClientRequest) returns (CreateClientResponse);
+
+}
+
+message CreateClientRequest { 
+    string userid = 1; 
+    string name = 2; 
+    string surname = 3; 
+}
+
+message CreateClientResponse { 
+    string clientid = 1; 
+}
+
+
+

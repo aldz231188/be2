@@ -13,8 +13,8 @@ var Module = fx.Options(
 		NewPool,
 		fx.Annotate(
 			repo.NewRepo,
-			fx.As(new(domain.AddressRepo)),
-			fx.As(new(domain.ClientRepo)),
+			// fx.As(new(domain.AddressRepo)),
+			// fx.As(new(domain.ClientRepo)),
 			fx.As(new(domain.UserRepo)),
 			fx.As(new(domain.SessionRepo)),
 		// fx.As(new(domain.SupplierRepo)),

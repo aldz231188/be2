@@ -10,8 +10,6 @@ import (
 type Repo struct{ q *store.Queries }
 
 var (
-	_ domain.AddressRepo = (*Repo)(nil)
-	_ domain.ClientRepo  = (*Repo)(nil)
 	_ domain.UserRepo    = (*Repo)(nil)
 	_ domain.SessionRepo = (*Repo)(nil)
 

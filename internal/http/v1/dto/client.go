@@ -1,80 +1,81 @@
 package dto
 
 import (
-	"be2/internal/app"
+	// "be2/internal/app"
 	"be2/internal/domain"
-	"be2/internal/shared/date"
+	// "be2/internal/shared/date"
 	"strings"
-	"time"
+	// "time"
 )
 
 type CreateClientRequest struct {
-	ClientName    string               `json:"client_name"`
-	ClientSurname string               `json:"client_surname"`
-	Birthday      date.DateOnly        `json:"birthday"`
-	Gender        string               `json:"gender"`
-	Address       CreateAddressRequest `json:"address"`
+	UserID        string `json:"user_id"`
+	ClientName    string `json:"client_name"`
+	ClientSurname string `json:"client_surname"`
+	// Birthday      date.DateOnly        `json:"birthday"`
+	// Gender        string               `json:"gender"`
+	// Address       CreateAddressRequest `json:"address"`
 }
 
 type ClientResponse struct {
-	ID               string          `json:"id"`
-	ClientName       string          `json:"client_name"`
-	ClientSurname    string          `json:"client_surname"`
-	Birthday         date.DateOnly   `json:"birthday"`
-	Gender           string          `json:"gender"`
-	RegistrationDate date.DateOnly   `json:"registration_date"`
-	Address          AddressResponse `json:"address"`
+	ID string `json:"id"`
+	// ClientName       string          `json:"client_name"`
+	// ClientSurname    string          `json:"client_surname"`
+	// Birthday         date.DateOnly   `json:"birthday"`
+	// Gender           string          `json:"gender"`
+	// RegistrationDate date.DateOnly   `json:"registration_date"`
+	// Address          AddressResponse `json:"address"`
 }
 
-func (r CreateClientRequest) ToDomainAddressClient() (app.CreateClientInput, error) {
-	errs := domain.NewValidationErrors()
+// func (r CreateClientRequest) ToDomainClient() (app.CreateClientInput, error) {
+// 	errs := domain.NewValidationErrors()
 
-	name := strings.TrimSpace(r.ClientName)
-	if name == "" {
-		errs.Add("client_name", "is required")
-	}
+// 	name := strings.TrimSpace(r.ClientName)
+// 	if name == "" {
+// 		errs.Add("client_name", "is required")
+// 	}
 
-	surname := strings.TrimSpace(r.ClientSurname)
-	if surname == "" {
-		errs.Add("client_surname", "is required")
-	}
+// 	surname := strings.TrimSpace(r.ClientSurname)
+// 	if surname == "" {
+// 		errs.Add("client_surname", "is required")
+// 	}
 
-	if r.Birthday.Time.IsZero() {
-		errs.Add("birthday", "is required")
-	} else if r.Birthday.Time.After(time.Now().UTC()) {
-		errs.Add("birthday", "cannot be in the future")
-	}
+// 	if r.Birthday.Time.IsZero() {
+// 		errs.Add("birthday", "is required")
+// 	} else if r.Birthday.Time.After(time.Now().UTC()) {
+// 		errs.Add("birthday", "cannot be in the future")
+// 	}
 
-	gender, err := parseGender(r.Gender)
-	if err != nil {
-		if validationErrs, ok := err.(*domain.ValidationErrors); ok {
-			errs.Merge(validationErrs)
-		} else {
-			return app.CreateClientInput{}, err
-		}
-	}
+// 	gender, err := parseGender(r.Gender)
+// 	if err != nil {
+// 		if validationErrs, ok := err.(*domain.ValidationErrors); ok {
+// 			errs.Merge(validationErrs)
+// 		} else {
+// 			return app.CreateClientInput{}, err
+// 		}
+// 	}
 
-	address, err := r.Address.ToDomainAddress()
-	if err != nil {
-		if validationErrs, ok := err.(*domain.ValidationErrors); ok {
-			errs.Merge(validationErrs)
-		} else {
-			return app.CreateClientInput{}, err
-		}
-	}
+// 	address, err := r.Address.ToDomainAddress()
+// 	if err != nil {
+// 		if validationErrs, ok := err.(*domain.ValidationErrors); ok {
+// 			errs.Merge(validationErrs)
+// 		} else {
+// 			return app.CreateClientInput{}, err
+// 		}
+// 	}
 
-	if errs.HasErrors() {
-		return app.CreateClientInput{}, errs
-	}
+// 	if errs.HasErrors() {
+// 		return app.CreateClientInput{}, errs
+// 	}
 
-	return app.CreateClientInput{
-		ClientName:    name,
-		ClientSurname: surname,
-		Birthday:      r.Birthday,
-		Gender:        gender,
-		Address:       address,
-	}, nil
-}
+// 	return app.CreateClientInput{
+// 		ClientName:    name,
+// 		ClientSurname: surname,
+// 		Birthday:      r.Birthday,
+// 		Gender:        gender,
+// 		Address:       address,
+// 	}, nil
+// }
 
 // func FromDomainClient(c domain.Client) ClientResponse {
 // 	return ClientResponse{

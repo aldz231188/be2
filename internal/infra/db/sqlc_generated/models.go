@@ -5,28 +5,9 @@
 package sqlc_generated
 
 import (
-	"time"
-
 	uuid "github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
-
-type Address struct {
-	ID      uuid.UUID
-	Country string
-	City    string
-	Street  string
-}
-
-type Client struct {
-	ID               uuid.UUID
-	ClientName       string
-	ClientSurname    string
-	Birthday         time.Time
-	Gender           string
-	RegistrationDate pgtype.Timestamptz
-	AddressID        uuid.UUID
-}
 
 type Session struct {
 	JtiHash   string

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"be2/internal/app"
+	"be2/internal/app/usecase"
 	"be2/internal/domain"
 	"be2/internal/http/v1/dto"
 	"context"
@@ -15,18 +16,18 @@ import (
 const statusClientClosedRequest = 499
 
 type Handler struct {
-	AS     app.AddressService
-	CS     app.ClientService
+	// AS     app.AddressService
+	CS     usecase.ClientUsecase
 	Auth   app.AuthService
 	logger *slog.Logger
 }
 
-func NewHandler(asi app.AddressService, csi app.ClientService, auth app.AuthService, logger *slog.Logger) Handler {
+func NewHandler(csi usecase.ClientUsecase, auth app.AuthService, logger *slog.Logger) Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return Handler{
-		AS:     asi,
+		// AS:     asi,
 		CS:     csi,
 		Auth:   auth,
 		logger: logger,
@@ -236,19 +237,19 @@ func (h *Handler) HandleCreateClient(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client, err := clientRow.ToDomainAddressClient()
-	if err != nil {
-		h.handleDomainError(w, err)
-		return
-	}
+	// client, err := clientRow.ToDomainAddressClient()
+	// if err != nil {
+	// 	h.handleDomainError(w, err)
+	// 	return
+	// }
 
-	clientID, err := h.CS.CreateClient(ctx, client)
+	clientID, err := h.CS.Create(ctx, clientRow.UserID, clientRow.ClientName, clientRow.ClientSurname)
 	if err != nil {
 		h.handleDomainError(w, err)
 		return
 	}
 	h.logger.InfoContext(ctx, "client created", "client_id", clientID)
-	h.respondJSON(w, http.StatusCreated, dto.SuccessResponse{Status: clientID.String()})
+	h.respondJSON(w, http.StatusCreated, dto.SuccessResponse{Status: clientID})
 }
 
 // HandleDeleteClient godoc
@@ -264,30 +265,30 @@ func (h *Handler) HandleCreateClient(w http.ResponseWriter, r *http.Request) {
 // @Failure     500 {object} dto.ErrorResponse
 // @Router      /deleteclient [post]
 // @Security    BearerAuth
-func (h *Handler) HandleDeleteClient(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
-	defer cancel()
+// func (h *Handler) HandleDeleteClient(w http.ResponseWriter, r *http.Request) {
+// 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+// 	defer cancel()
 
-	var clientID dto.UUIDRequest
-	if err := json.NewDecoder(r.Body).Decode(&clientID); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
-		return
-	}
+// 	var clientID dto.UUIDRequest
+// 	if err := json.NewDecoder(r.Body).Decode(&clientID); err != nil {
+// 		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
+// 		return
+// 	}
 
-	id, err := clientID.ToDomain()
-	if err != nil {
-		h.handleDomainError(w, err)
-		return
-	}
+// 	id, err := clientID.ToDomain()
+// 	if err != nil {
+// 		h.handleDomainError(w, err)
+// 		return
+// 	}
 
-	if deleted, err := h.CS.DeleteClient(ctx, id); err != nil {
-		h.handleDomainError(w, err)
-		return
-	} else {
-		h.logger.InfoContext(ctx, "client deleted", "client_id", id, "deleted_rows", deleted)
-		h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
-	}
-}
+// 	if deleted, err := h.CS.DeleteClient(ctx, id); err != nil {
+// 		h.handleDomainError(w, err)
+// 		return
+// 	} else {
+// 		h.logger.InfoContext(ctx, "client deleted", "client_id", id, "deleted_rows", deleted)
+// 		h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
+// 	}
+// }
 
 func (h *Handler) handleDomainError(w http.ResponseWriter, err error) {
 	var (
