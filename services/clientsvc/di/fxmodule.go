@@ -22,17 +22,11 @@ var App = fx.Options(
 			app.NewClientService,
 			fx.As(new(app.ClientService)),
 		),
-		// fx.Annotate(
-		// 	app.NewAuthService,
-		// 	fx.As(new(app.AuthService)),
-		// ),
 	),
 	fx.Provide(handlers.NewHandler),
 	fx.Provide(grpc.NewGRPCServer,
 		grpc.NewListener),
-	fx.Invoke(grpc.Start),
-
-	// fx.Provide(router.RegisterRoutes),
+	fx.Invoke(grpc.RegisterHandlers, grpc.Run),
 	// fx.Invoke(func(g fx.DotGraph) {
 	// 	path := "/tmp/graph.dot"
 	// 	os.WriteFile(path, []byte(g), 0644)

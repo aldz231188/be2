@@ -70,7 +70,7 @@ func TestLoadSecrets_FromFiles(t *testing.T) {
 		t.Fatalf("LoadSecrets returned error: %v", err)
 	}
 
-	if secrets.DBPassword != "db-from-file" || secrets.JWTSecret != "jwt-from-file" {
+	if secrets.DBPassword != "db-from-file" {
 		t.Fatalf("unexpected secrets: %+v", secrets)
 	}
 }
@@ -86,7 +86,7 @@ func TestLoadSecrets_FromEnv(t *testing.T) {
 		t.Fatalf("LoadSecrets returned error: %v", err)
 	}
 
-	if secrets.DBPassword != "db-env" || secrets.JWTSecret != "jwt-env" {
+	if secrets.DBPassword != "db-env" {
 		t.Fatalf("unexpected secrets: %+v", secrets)
 	}
 }

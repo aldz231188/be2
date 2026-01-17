@@ -54,7 +54,7 @@ services:
     volumes:
       - ${MIGR_DIR}:/migrations:ro
       - ./entrypoint.sh:/entrypoint.sh:ro # <-- Монтируем скрипт
-    entrypoint: ["/bin/sh", "/entrypoint.sh"] # <-- Запускаем скрипт
+    entrypoint: ["/bin/sh", "/entrypoint.sh"] 
     restart: "on-failure"
 
   clientsvc_migrator:
@@ -69,10 +69,6 @@ services:
     # Переопределяем параметры подключения ТОЛЬКО для clientsvc_migrator
     environment:
       DB_HOST: clientsvc_db
-    #   DB_PORT: "5432"
-    #   DB_USER: ${CLIENT_DB_USER:-client}
-    #   DB_NAME: ${CLIENT_DB_NAME:-clientsvcdb}
-      # DB_SSLMODE: disable   # если у вас это используется в entrypoint
     volumes:
       - ${CLIENT_MIGR_DIR}:/migrations:ro
       - ./entrypoint.sh:/entrypoint.sh:ro
@@ -119,9 +115,8 @@ services:
       DB_HOST: clientsvc_db
       DB_PASSWORD_FILE: /run/secrets/db_password
       JWT_SECRET_FILE: /run/secrets/jwt_secret
-    expose:
-    # брать из env
-      - "50051"
+    # expose:
+    #   - "50051"
 
   nginx:
     image: nginx:1.27-alpine
