@@ -1,11 +1,11 @@
-module be2/internal
+module be2/services/authsvc
 
 go 1.24.0
 
 toolchain go1.24.1
 
 require (
-	be2/contracts v0.0.0
+	be2/contracts v0.0.0-00010101000000-000000000000
 	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.6
@@ -14,10 +14,9 @@ require (
 	go.uber.org/fx v1.24.0
 	golang.org/x/crypto v0.44.0
 	google.golang.org/grpc v1.78.0
-// Путь ../contracts должен соответствовать структуре внутри Docker-образа
 )
 
-replace be2/contracts => ../contracts
+replace be2/contracts => ../../contracts
 
 require (
 	github.com/golang/protobuf v1.5.4 // indirect

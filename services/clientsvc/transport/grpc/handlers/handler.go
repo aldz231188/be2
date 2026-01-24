@@ -9,7 +9,6 @@ import (
 	// "errors"
 	"log/slog"
 	"net/http"
-	"time"
 
 	clientv1 "be2/contracts/gen/client/v1"
 	// "example.com/microdemo/clientsvc/services/clientsvc/repo"
@@ -23,8 +22,7 @@ const statusClientClosedRequest = 499
 type Handler struct {
 	clientv1.UnimplementedClientServiceServer
 	// AS     app.AddressService
-	CS app.ClientService
-	// Auth   app.AuthService
+	CS     app.ClientService
 	logger *slog.Logger
 }
 
@@ -41,8 +39,8 @@ func NewHandler(csi app.ClientService, logger *slog.Logger) *Handler {
 }
 
 func (h *Handler) CreateClient(ctx context.Context, req *clientv1.CreateClientRequest) (*clientv1.CreateClientResponse, error) {
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	defer cancel()
+	// ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	// defer cancel()
 
 	// var clientRow mapper.CreateClientRequest
 	// if err := json.NewDecoder(r.Body).Decode(&clientRow); err != nil {
