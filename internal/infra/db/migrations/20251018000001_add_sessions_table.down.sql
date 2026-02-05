@@ -1,3 +1,0 @@
-DROP TABLE IF EXISTS sessions;
-
-ALTER TABLE "user" DROP COLUMN IF EXISTS token_version;

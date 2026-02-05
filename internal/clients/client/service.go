@@ -27,8 +27,3 @@ func (s *Service) Create(ctx context.Context, userid, name, surename string) (st
 	}
 	return u, nil
 }
-
-// func (s *Service) Delete(ctx context.Context, id string) error {
-// 	_, err := s.c.DeleteClient(ctx, &clientv1.DeleteClientRequest{Id: id})
-// 	return err
-// }

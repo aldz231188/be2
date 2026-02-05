@@ -14,22 +14,22 @@ import (
 )
 
 type fakeUserRepo struct {
-	users           map[uuid.UUID]domain.User
-	usersByUsername map[string]uuid.UUID
-	createErr       error
-	getErr          error
-	incremented     uuid.UUID
+	users        map[uuid.UUID]domain.User
+	usersByLogin map[string]uuid.UUID
+	createErr    error
+	getErr       error
+	incremented  uuid.UUID
 }
 
 func newFakeUserRepo() *fakeUserRepo {
-	return &fakeUserRepo{users: make(map[uuid.UUID]domain.User), usersByUsername: make(map[string]uuid.UUID)}
+	return &fakeUserRepo{users: make(map[uuid.UUID]domain.User), usersByLogin: make(map[string]uuid.UUID)}
 }
 
-func (r *fakeUserRepo) GetByUsername(ctx context.Context, username string) (domain.User, error) {
+func (r *fakeUserRepo) GetByLogin(ctx context.Context, login string) (domain.User, error) {
 	if r.getErr != nil {
 		return domain.User{}, r.getErr
 	}
-	id, ok := r.usersByUsername[username]
+	id, ok := r.usersByLogin[login]
 	if !ok {
 		return domain.User{}, domain.ErrUserNotFound
 	}
@@ -53,7 +53,7 @@ func (r *fakeUserRepo) CreateUser(ctx context.Context, user domain.User) (domain
 	}
 	user.ID = uuid.New()
 	r.users[user.ID] = user
-	r.usersByUsername[user.Username] = user.ID
+	r.usersByLogin[user.Login] = user.ID
 	return user, nil
 }
 
@@ -141,9 +141,9 @@ func TestAuthenticateInvalidPassword(t *testing.T) {
 	users := newFakeUserRepo()
 	sessions := newFakeSessionRepo()
 	hash, _ := bcrypt.GenerateFromPassword([]byte("correct"), bcrypt.DefaultCost)
-	user := domain.User{ID: uuid.New(), Username: "user", PasswordHash: string(hash)}
+	user := domain.User{ID: uuid.New(), Login: "user", PasswordHash: string(hash)}
 	users.users[user.ID] = user
-	users.usersByUsername[user.Username] = user.ID
+	users.usersByLogin[user.Login] = user.ID
 
 	service := NewAuthService(users, sessions, &config.Secrets{JWTSecret: "secret"})
 	if _, err := service.Authenticate(context.Background(), "user", "wrong"); !errors.Is(err, ErrInvalidCredentials) {
@@ -155,9 +155,9 @@ func TestRefreshAndSessionRevocation(t *testing.T) {
 	users := newFakeUserRepo()
 	sessions := newFakeSessionRepo()
 	hash, _ := bcrypt.GenerateFromPassword([]byte("correct"), bcrypt.DefaultCost)
-	user := domain.User{ID: uuid.New(), Username: "user", PasswordHash: string(hash)}
+	user := domain.User{ID: uuid.New(), Login: "user", PasswordHash: string(hash)}
 	users.users[user.ID] = user
-	users.usersByUsername[user.Username] = user.ID
+	users.usersByLogin[user.Login] = user.ID
 
 	service := NewAuthService(users, sessions, &config.Secrets{JWTSecret: "secret"})
 	pair, err := service.Authenticate(context.Background(), "user", "correct")
@@ -182,9 +182,9 @@ func TestLogoutCurrent(t *testing.T) {
 	users := newFakeUserRepo()
 	sessions := newFakeSessionRepo()
 	hash, _ := bcrypt.GenerateFromPassword([]byte("correct"), bcrypt.DefaultCost)
-	user := domain.User{ID: uuid.New(), Username: "user", PasswordHash: string(hash)}
+	user := domain.User{ID: uuid.New(), Login: "user", PasswordHash: string(hash)}
 	users.users[user.ID] = user
-	users.usersByUsername[user.Username] = user.ID
+	users.usersByLogin[user.Login] = user.ID
 
 	service := NewAuthService(users, sessions, &config.Secrets{JWTSecret: "secret"})
 	pair, err := service.Authenticate(context.Background(), "user", "correct")
@@ -201,9 +201,9 @@ func TestLogoutAll(t *testing.T) {
 	users := newFakeUserRepo()
 	sessions := newFakeSessionRepo()
 	hash, _ := bcrypt.GenerateFromPassword([]byte("correct"), bcrypt.DefaultCost)
-	user := domain.User{ID: uuid.New(), Username: "user", PasswordHash: string(hash)}
+	user := domain.User{ID: uuid.New(), Login: "user", PasswordHash: string(hash)}
 	users.users[user.ID] = user
-	users.usersByUsername[user.Username] = user.ID
+	users.usersByLogin[user.Login] = user.ID
 
 	service := NewAuthService(users, sessions, &config.Secrets{JWTSecret: "secret"})
 	pair, err := service.Authenticate(context.Background(), "user", "correct")
@@ -223,9 +223,9 @@ func TestValidateAccessToken(t *testing.T) {
 	users := newFakeUserRepo()
 	sessions := newFakeSessionRepo()
 	hash, _ := bcrypt.GenerateFromPassword([]byte("correct"), bcrypt.DefaultCost)
-	user := domain.User{ID: uuid.New(), Username: "user", PasswordHash: string(hash)}
+	user := domain.User{ID: uuid.New(), Login: "user", PasswordHash: string(hash)}
 	users.users[user.ID] = user
-	users.usersByUsername[user.Username] = user.ID
+	users.usersByLogin[user.Login] = user.ID
 
 	service := NewAuthService(users, sessions, &config.Secrets{JWTSecret: "secret"})
 	pair, err := service.Authenticate(context.Background(), "user", "correct")

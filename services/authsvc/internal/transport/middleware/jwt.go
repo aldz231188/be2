@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"be2/internal/app"
+	"be2/services/authsvc/internal/app"
 	"context"
 	"net/http"
 	"strings"

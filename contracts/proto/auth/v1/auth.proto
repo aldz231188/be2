@@ -6,7 +6,7 @@ option go_package = "be2/contracts/gen/auth/v1;authv1";
 
 service AuthService {
   rpc Login (LoginRequest) returns (LoginResponse);
-  rpc Register (LoginRequest) returns (LoginResponse);
+  rpc Register (RegisterRequest) returns (RegisterResponse);
   rpc Refresh (RefreshRequest) returns (RefreshResponse);
   rpc Logout (LogoutRequest) returns (.google.protobuf.Empty);
   rpc LogoutAll (LogoutAllRequest) returns (.google.protobuf.Empty);
@@ -18,23 +18,27 @@ service AuthService {
 // === Messages ===
 
 message TokenPair {
-	string access_token = 1;  
-	string refresh_token = 2; 
+  string access_token        = 1; // JWT
+  int64  access_expires_at   = 2; // unix seconds (UTC)
+  string refresh_token       = 3; // JWT (ротируется на каждом Refresh)
+  int64  refresh_expires_at  = 4; // unix seconds (UTC)
+  string session_id          = 5; // UUID текущей сессии (удобно для UI/управления устройствами)
+  int64  user_id             = 6; // полезно BFF, но не обязательно
 }
 
 
 message LoginRequest { string login = 1; string password = 2; }
 message LoginResponse {
-    TokenPair token_pair = 1;
+    TokenPair tokens  = 1;   
 }
 message RegisterRequest { string login = 1; string password = 2; }
 message RegisterResponse {
-    TokenPair token_pair = 1;
+    TokenPair tokens  = 1;  
 }
 
 message RefreshRequest { string refresh_token = 1; }
 message RefreshResponse {
-    TokenPair token_pair = 1;
+    TokenPair tokens  = 1;  
 }
 
 message LogoutRequest { string refresh_token = 1; }

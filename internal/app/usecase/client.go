@@ -32,13 +32,13 @@ func (u *ClientUsecase) Create(ctx context.Context, userid, name, surename strin
 }
 
 // func (u *ClientUsecase) Delete(ctx context.Context, id string) error {
-// 	id = strings.TrimSpace(id)
-// 	if id == "" {
-// 		return domain.ValidationError{}
-// 	}
+// 	// id = strings.TrimSpace(id)
+// 	// if id == "" {
+// 	// 	return domain.ValidationError{}
+// 	// }
 
-// 	cctx, cancel := context.WithTimeout(ctx, u.depTimeout)
-// 	defer cancel()
+// 	// cctx, cancel := context.WithTimeout(ctx, u.depTimeout)
+// 	// defer cancel()
 
-// 	return u.svc.Delete(cctx, id)
+// 	return nil
 // }

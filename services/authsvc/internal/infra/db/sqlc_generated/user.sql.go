@@ -12,22 +12,22 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO "user" (username, password_hash)
+INSERT INTO "user" (login, password_hash)
 VALUES ($1, $2)
-RETURNING id, username, password_hash, created_at, token_version
+RETURNING id, login, password_hash, created_at, token_version
 `
 
 type CreateUserParams struct {
-	Username     string
+	Login        string
 	PasswordHash string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, createUser, arg.Username, arg.PasswordHash)
+	row := q.db.QueryRow(ctx, createUser, arg.Login, arg.PasswordHash)
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Username,
+		&i.Login,
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.TokenVersion,
@@ -36,7 +36,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, password_hash, created_at, token_version
+SELECT id, login, password_hash, created_at, token_version
 FROM "user"
 WHERE id = $1
 LIMIT 1
@@ -47,7 +47,7 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Username,
+		&i.Login,
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.TokenVersion,
@@ -55,19 +55,19 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 	return i, err
 }
 
-const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, password_hash, created_at, token_version
+const getUserByLogin = `-- name: GetUserByLogin :one
+SELECT id, login, password_hash, created_at, token_version
 FROM "user"
-WHERE username = $1
+WHERE login = $1
 LIMIT 1
 `
 
-func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
-	row := q.db.QueryRow(ctx, getUserByUsername, username)
+func (q *Queries) GetUserByLogin(ctx context.Context, login string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByLogin, login)
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Username,
+		&i.Login,
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.TokenVersion,

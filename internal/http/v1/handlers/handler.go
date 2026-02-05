@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"be2/internal/app"
+	// "be2/internal/app"
 	"be2/internal/app/usecase"
+	"be2/internal/config"
 	"be2/internal/domain"
 	"be2/internal/http/v1/dto"
 	"context"
@@ -17,12 +18,13 @@ const statusClientClosedRequest = 499
 
 type Handler struct {
 	// AS     app.AddressService
+	cfg    config.Config
 	CS     usecase.ClientUsecase
-	Auth   app.AuthService
+	Auth   usecase.AuthUsecase
 	logger *slog.Logger
 }
 
-func NewHandler(csi usecase.ClientUsecase, auth app.AuthService, logger *slog.Logger) Handler {
+func NewHandler(cfg config.Config, csi usecase.ClientUsecase, auth usecase.AuthUsecase, logger *slog.Logger) Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -34,42 +36,27 @@ func NewHandler(csi usecase.ClientUsecase, auth app.AuthService, logger *slog.Lo
 	}
 }
 
-// HandleLogin godoc
-// @Summary     Authenticate user
-// @Tags        auth
-// @Accept      json
-// @Produce     json
-// @Param       request body dto.LoginRequest true "User credentials"
-// @Success     200 {object} dto.TokenResponse
-// @Failure     400 {object} dto.ErrorResponse
-// @Failure     401 {object} dto.ErrorResponse
-// @Failure     500 {object} dto.ErrorResponse
-// @Router      /login [post]
-func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
-	defer cancel()
-
-	var creds dto.LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
-		return
+func (h *Handler) setRefreshCookie(w http.ResponseWriter, token string, exp time.Time) {
+	c := &http.Cookie{
+		Name:     h.cfg.CookieName,
+		Value:    token,
+		Path:     h.cfg.CookiePath,
+		HttpOnly: true,
+		Secure:   h.cfg.CookieSecure,
+		Expires:  exp,
 	}
-
-	tokens, err := h.Auth.Authenticate(ctx, creds.Username, creds.Password)
-	if err != nil {
-		status := http.StatusUnauthorized
-		if errors.Is(err, app.ErrInvalidCredentials) {
-			h.respondError(w, status, "invalid credentials", nil)
-			return
-		}
-		h.respondError(w, status, err.Error(), nil)
-		return
+	switch h.cfg.CookieSameSite {
+	case "Strict":
+		c.SameSite = http.SameSiteStrictMode
+	case "None":
+		c.SameSite = http.SameSiteNoneMode
+	default:
+		c.SameSite = http.SameSiteLaxMode
 	}
-
-	h.respondJSON(w, http.StatusOK, dto.TokenResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken})
+	http.SetCookie(w, c)
 }
 
-// HandleRegister godoc
+// Register godoc
 // @Summary     Register a new user
 // @Tags        auth
 // @Accept      json
@@ -80,7 +67,7 @@ func (h *Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 // @Failure     409 {object} dto.ErrorResponse
 // @Failure     500 {object} dto.ErrorResponse
 // @Router      /register [post]
-func (h *Handler) HandleRegister(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
 
@@ -90,7 +77,7 @@ func (h *Handler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tokens, err := h.Auth.Register(ctx, req.Username, req.Password)
+	tokens, err := h.Auth.Register(ctx, req.Login, req.Password)
 	if err != nil {
 		status := http.StatusInternalServerError
 		switch {
@@ -98,122 +85,158 @@ func (h *Handler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 			status = http.StatusConflict
 			h.respondError(w, status, "user already exists", nil)
 			return
-		case errors.Is(err, app.ErrInvalidCredentials):
-			status = http.StatusBadRequest
-			h.respondError(w, status, "invalid credentials", nil)
-			return
+			// case errors.Is(err, app.ErrInvalidCredentials):
+			// 	status = http.StatusBadRequest
+			// 	h.respondError(w, status, "invalid credentials", nil)
+			// 	return
 		}
 		h.respondError(w, status, err.Error(), nil)
 		return
 	}
+	h.setRefreshCookie(w, tokens.RefreshToken, time.Unix(tokens.RefreshExpiresAt, 0))
 
 	h.respondJSON(w, http.StatusCreated, dto.TokenResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken})
 }
 
-// HandleRefresh godoc
-// @Summary     Refresh access token
-// @Tags        auth
-// @Accept      json
-// @Produce     json
-// @Param       request body dto.RefreshRequest true "Refresh token"
-// @Success     200 {object} dto.TokenResponse
-// @Failure     400 {object} dto.ErrorResponse
-// @Failure     401 {object} dto.ErrorResponse
-// @Failure     500 {object} dto.ErrorResponse
-// @Router      /refresh [post]
-func (h *Handler) HandleRefresh(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
-	defer cancel()
+// // Login godoc
+// // @Summary     Authenticate user
+// // @Tags        auth
+// // @Accept      json
+// // @Produce     json
+// // @Param       request body dto.LoginRequest true "User credentials"
+// // @Success     200 {object} dto.TokenResponse
+// // @Failure     400 {object} dto.ErrorResponse
+// // @Failure     401 {object} dto.ErrorResponse
+// // @Failure     500 {object} dto.ErrorResponse
+// // @Router      /login [post]
+// func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+// 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+// 	defer cancel()
 
-	var req dto.RefreshRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
-		return
-	}
+// 	var creds dto.LoginRequest
+// 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+// 		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
+// 		return
+// 	}
 
-	tokens, err := h.Auth.Refresh(ctx, req.RefreshToken)
-	if err != nil {
-		status := http.StatusUnauthorized
-		if errors.Is(err, app.ErrInvalidToken) {
-			h.respondError(w, status, "invalid or expired token", nil)
-			return
-		}
-		h.respondError(w, status, err.Error(), nil)
-		return
-	}
+// 	tokens, err := h.Auth.Authenticate(ctx, creds.Login, creds.Password)
+// 	if err != nil {
+// 		status := http.StatusUnauthorized
+// 		if errors.Is(err, app.ErrInvalidCredentials) {
+// 			h.respondError(w, status, "invalid credentials", nil)
+// 			return
+// 		}
+// 		h.respondError(w, status, err.Error(), nil)
+// 		return
+// 	}
 
-	h.respondJSON(w, http.StatusOK, dto.TokenResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken})
-}
+// 	h.respondJSON(w, http.StatusOK, dto.TokenResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken})
+// }
 
-// HandleLogout godoc
-// @Summary     Logout current session
-// @Tags        auth
-// @Accept      json
-// @Produce     json
-// @Param       request body dto.LogoutRequest true "Refresh token"
-// @Success     200 {object} dto.SuccessResponse
-// @Failure     400 {object} dto.ErrorResponse
-// @Failure     401 {object} dto.ErrorResponse
-// @Failure     500 {object} dto.ErrorResponse
-// @Router      /logout [post]
-func (h *Handler) HandleLogout(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
-	defer cancel()
+// // Refresh godoc
+// // @Summary     Refresh access token
+// // @Tags        auth
+// // @Accept      json
+// // @Produce     json
+// // @Param       request body dto.RefreshRequest true "Refresh token"
+// // @Success     200 {object} dto.TokenResponse
+// // @Failure     400 {object} dto.ErrorResponse
+// // @Failure     401 {object} dto.ErrorResponse
+// // @Failure     500 {object} dto.ErrorResponse
+// // @Router      /refresh [post]
+// func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
+// 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+// 	defer cancel()
 
-	var req dto.LogoutRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
-		return
-	}
+// 	var req dto.RefreshRequest
+// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+// 		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
+// 		return
+// 	}
 
-	if err := h.Auth.LogoutCurrent(ctx, req.RefreshToken); err != nil {
-		status := http.StatusUnauthorized
-		if errors.Is(err, app.ErrInvalidToken) {
-			h.respondError(w, status, "invalid or expired token", nil)
-			return
-		}
-		h.respondError(w, status, err.Error(), nil)
-		return
-	}
+// 	tokens, err := h.Auth.Refresh(ctx, req.RefreshToken)
+// 	if err != nil {
+// 		status := http.StatusUnauthorized
+// 		if errors.Is(err, app.ErrInvalidToken) {
+// 			h.respondError(w, status, "invalid or expired token", nil)
+// 			return
+// 		}
+// 		h.respondError(w, status, err.Error(), nil)
+// 		return
+// 	}
 
-	h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
-}
+// 	h.respondJSON(w, http.StatusOK, dto.TokenResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken})
+// }
 
-// HandleLogoutAll godoc
-// @Summary     Logout from all sessions
-// @Tags        auth
-// @Accept      json
-// @Produce     json
-// @Param       request body dto.LogoutRequest true "Refresh token"
-// @Success     200 {object} dto.SuccessResponse
-// @Failure     400 {object} dto.ErrorResponse
-// @Failure     401 {object} dto.ErrorResponse
-// @Failure     500 {object} dto.ErrorResponse
-// @Router      /logout_all [post]
-func (h *Handler) HandleLogoutAll(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
-	defer cancel()
+// // Logout godoc
+// // @Summary     Logout current session
+// // @Tags        auth
+// // @Accept      json
+// // @Produce     json
+// // @Param       request body dto.LogoutRequest true "Refresh token"
+// // @Success     200 {object} dto.SuccessResponse
+// // @Failure     400 {object} dto.ErrorResponse
+// // @Failure     401 {object} dto.ErrorResponse
+// // @Failure     500 {object} dto.ErrorResponse
+// // @Router      /logout [post]
+// func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+// 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+// 	defer cancel()
 
-	var req dto.LogoutRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
-		return
-	}
+// 	var req dto.LogoutRequest
+// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+// 		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
+// 		return
+// 	}
 
-	if err := h.Auth.LogoutAll(ctx, req.RefreshToken); err != nil {
-		status := http.StatusUnauthorized
-		if errors.Is(err, app.ErrInvalidToken) {
-			h.respondError(w, status, "invalid or expired token", nil)
-			return
-		}
-		h.respondError(w, status, err.Error(), nil)
-		return
-	}
+// 	if err := h.Auth.LogoutCurrent(ctx, req.RefreshToken); err != nil {
+// 		status := http.StatusUnauthorized
+// 		if errors.Is(err, app.ErrInvalidToken) {
+// 			h.respondError(w, status, "invalid or expired token", nil)
+// 			return
+// 		}
+// 		h.respondError(w, status, err.Error(), nil)
+// 		return
+// 	}
 
-	h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
-}
+// 	h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
+// }
 
-// HandleCreateClient godoc
+// // LogoutAll godoc
+// // @Summary     Logout from all sessions
+// // @Tags        auth
+// // @Accept      json
+// // @Produce     json
+// // @Param       request body dto.LogoutRequest true "Refresh token"
+// // @Success     200 {object} dto.SuccessResponse
+// // @Failure     400 {object} dto.ErrorResponse
+// // @Failure     401 {object} dto.ErrorResponse
+// // @Failure     500 {object} dto.ErrorResponse
+// // @Router      /logout_all [post]
+// func (h *Handler) LogoutAll(w http.ResponseWriter, r *http.Request) {
+// 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+// 	defer cancel()
+
+// 	var req dto.LogoutRequest
+// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+// 		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
+// 		return
+// 	}
+
+// 	if err := h.Auth.LogoutAll(ctx, req.RefreshToken); err != nil {
+// 		status := http.StatusUnauthorized
+// 		if errors.Is(err, app.ErrInvalidToken) {
+// 			h.respondError(w, status, "invalid or expired token", nil)
+// 			return
+// 		}
+// 		h.respondError(w, status, err.Error(), nil)
+// 		return
+// 	}
+
+// 	h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
+// }
+
+// CreateClient godoc
 // @Summary     Create client
 // @Tags        clients
 // @Accept      json
@@ -227,7 +250,7 @@ func (h *Handler) HandleLogoutAll(w http.ResponseWriter, r *http.Request) {
 // @Failure     500 {object} dto.ErrorResponse
 // @Router      /createclient [post]
 // @Security    BearerAuth
-func (h *Handler) HandleCreateClient(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) CreateClient(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
 

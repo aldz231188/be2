@@ -5,10 +5,8 @@ import (
 	// "be2/services/clientsvc/domain"
 	"be2/services/clientsvc/transport/grpc/mapper"
 	"context"
-	"encoding/json"
 	// "errors"
 	"log/slog"
-	"net/http"
 
 	clientv1 "be2/contracts/gen/client/v1"
 	// "example.com/microdemo/clientsvc/services/clientsvc/repo"
@@ -20,10 +18,10 @@ import (
 const statusClientClosedRequest = 499
 
 type Handler struct {
-	clientv1.UnimplementedClientServiceServer
 	// AS     app.AddressService
 	CS     app.ClientService
 	logger *slog.Logger
+	clientv1.UnimplementedClientServiceServer
 }
 
 func NewHandler(csi app.ClientService, logger *slog.Logger) *Handler {
@@ -133,15 +131,15 @@ func (h *Handler) CreateClient(ctx context.Context, req *clientv1.CreateClientRe
 // 	// h.respondError(w, status, message, details)
 // }
 
-func (h *Handler) respondError(w http.ResponseWriter, status int, message string, details []mapper.ErrorDetail) {
-	h.respondJSON(w, status, mapper.ErrorResponse{Error: message, Details: details})
-}
+// func (h *Handler) respondError(w http.ResponseWriter, status int, message string, details []mapper.ErrorDetail) {
+// 	h.respondJSON(w, status, mapper.ErrorResponse{Error: message, Details: details})
+// }
 
-func (h *Handler) respondJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if payload == nil {
-		return
-	}
-	_ = json.NewEncoder(w).Encode(payload)
-}
+// func (h *Handler) respondJSON(w http.ResponseWriter, status int, payload any) {
+// 	w.Header().Set("Content-Type", "application/json")
+// 	w.WriteHeader(status)
+// 	if payload == nil {
+// 		return
+// 	}
+// 	_ = json.NewEncoder(w).Encode(payload)
+// }

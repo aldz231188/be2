@@ -471,7 +471,7 @@
                 "password": {
                     "type": "string"
                 },
-                "username": {
+                "login": {
                     "type": "string"
                 }
             }
@@ -498,7 +498,7 @@
                 "password": {
                     "type": "string"
                 },
-                "username": {
+                "login": {
                     "type": "string"
                 }
             }

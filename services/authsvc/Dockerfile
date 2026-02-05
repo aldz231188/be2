@@ -9,19 +9,19 @@ RUN apk add --no-cache git ca-certificates
 
 # Копируем go.mod обоих модулей (пути от корня проекта)
 COPY contracts/go.mod ./contracts/
-COPY internal/go.mod ./internal/
+COPY services/authsvc/go.mod ./services/authsvc/
 
 # Переходим в папку сервиса для загрузки зависимостей
-WORKDIR /src/internal
+WORKDIR /src/services/authsvc
 RUN --mount=type=cache,target=/go/pkg/mod go mod download
 
 # Копируем исходники (снова пути от корня)
 WORKDIR /src
 COPY contracts/ ./contracts/
-COPY internal/ ./internal/
+COPY services/authsvc/ ./services/authsvc/
 
 # Собираем
-WORKDIR /src/internal
+WORKDIR /src/services/authsvc
 
 # COPY . .
 
@@ -29,7 +29,7 @@ WORKDIR /src/internal
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -trimpath -ldflags="-s -w" -o /out/app ./cmd/server
+    go build -trimpath -ldflags="-s -w" -o /out/app ./internal/cmd/server
 
 # --- Stage 2: Final (Production) ---
 # Используем distroless для безопасности и минимального размера (всего ~2MB + ваш бинарник)

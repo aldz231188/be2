@@ -13,8 +13,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-func (r *Repo) GetByUsername(ctx context.Context, username string) (domain.User, error) {
-	row, err := r.q.GetUserByUsername(ctx, username)
+func (r *Repo) GetByLogin(ctx context.Context, login string) (domain.User, error) {
+	row, err := r.q.GetUserByLogin(ctx, login)
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 			return domain.User{}, err
@@ -22,12 +22,12 @@ func (r *Repo) GetByUsername(ctx context.Context, username string) (domain.User,
 		if errors.Is(err, pgx.ErrNoRows) {
 			return domain.User{}, domain.ErrUserNotFound
 		}
-		return domain.User{}, fmt.Errorf("get user by username: %w", err)
+		return domain.User{}, fmt.Errorf("get user by login: %w", err)
 	}
 
 	return domain.User{
 		ID:           row.ID,
-		Username:     row.Username,
+		Login:        row.Login,
 		PasswordHash: row.PasswordHash,
 		CreatedAt:    row.CreatedAt.Time,
 		TokenVersion: row.TokenVersion,
@@ -48,7 +48,7 @@ func (r *Repo) GetByID(ctx context.Context, id uuid.UUID) (domain.User, error) {
 
 	return domain.User{
 		ID:           row.ID,
-		Username:     row.Username,
+		Login:        row.Login,
 		PasswordHash: row.PasswordHash,
 		CreatedAt:    row.CreatedAt.Time,
 		TokenVersion: row.TokenVersion,
@@ -56,7 +56,7 @@ func (r *Repo) GetByID(ctx context.Context, id uuid.UUID) (domain.User, error) {
 }
 
 func (r *Repo) CreateUser(ctx context.Context, user domain.User) (domain.User, error) {
-	row, err := r.q.CreateUser(ctx, sqlc_generated.CreateUserParams{Username: user.Username, PasswordHash: user.PasswordHash}) //некрасиво как то
+	row, err := r.q.CreateUser(ctx, sqlc_generated.CreateUserParams{Login: user.Login, PasswordHash: user.PasswordHash}) //некрасиво как то
 	if err != nil {
 		var pgErr *pgconn.PgError
 		switch {
@@ -71,7 +71,7 @@ func (r *Repo) CreateUser(ctx context.Context, user domain.User) (domain.User, e
 
 	return domain.User{
 		ID:           row.ID,
-		Username:     row.Username,
+		Login:        row.Login,
 		PasswordHash: row.PasswordHash,
 		CreatedAt:    row.CreatedAt.Time,
 		TokenVersion: row.TokenVersion,

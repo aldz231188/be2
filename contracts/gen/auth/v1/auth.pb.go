@@ -23,11 +23,15 @@ const (
 )
 
 type TokenPair struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
-	RefreshToken  string                 `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	AccessToken      string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`                   // JWT
+	AccessExpiresAt  int64                  `protobuf:"varint,2,opt,name=access_expires_at,json=accessExpiresAt,proto3" json:"access_expires_at,omitempty"`    // unix seconds (UTC)
+	RefreshToken     string                 `protobuf:"bytes,3,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`                // JWT (ротируется на каждом Refresh)
+	RefreshExpiresAt int64                  `protobuf:"varint,4,opt,name=refresh_expires_at,json=refreshExpiresAt,proto3" json:"refresh_expires_at,omitempty"` // unix seconds (UTC)
+	SessionId        string                 `protobuf:"bytes,5,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`                         // UUID текущей сессии (удобно для UI/управления устройствами)
+	UserId           int64                  `protobuf:"varint,6,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                                 // полезно BFF, но не обязательно
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *TokenPair) Reset() {
@@ -67,11 +71,39 @@ func (x *TokenPair) GetAccessToken() string {
 	return ""
 }
 
+func (x *TokenPair) GetAccessExpiresAt() int64 {
+	if x != nil {
+		return x.AccessExpiresAt
+	}
+	return 0
+}
+
 func (x *TokenPair) GetRefreshToken() string {
 	if x != nil {
 		return x.RefreshToken
 	}
 	return ""
+}
+
+func (x *TokenPair) GetRefreshExpiresAt() int64 {
+	if x != nil {
+		return x.RefreshExpiresAt
+	}
+	return 0
+}
+
+func (x *TokenPair) GetSessionId() string {
+	if x != nil {
+		return x.SessionId
+	}
+	return ""
+}
+
+func (x *TokenPair) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
 }
 
 type LoginRequest struct {
@@ -128,7 +160,7 @@ func (x *LoginRequest) GetPassword() string {
 
 type LoginResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	TokenPair     *TokenPair             `protobuf:"bytes,1,opt,name=token_pair,json=tokenPair,proto3" json:"token_pair,omitempty"`
+	Tokens        *TokenPair             `protobuf:"bytes,1,opt,name=tokens,proto3" json:"tokens,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -163,9 +195,9 @@ func (*LoginResponse) Descriptor() ([]byte, []int) {
 	return file_auth_v1_auth_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *LoginResponse) GetTokenPair() *TokenPair {
+func (x *LoginResponse) GetTokens() *TokenPair {
 	if x != nil {
-		return x.TokenPair
+		return x.Tokens
 	}
 	return nil
 }
@@ -224,7 +256,7 @@ func (x *RegisterRequest) GetPassword() string {
 
 type RegisterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	TokenPair     *TokenPair             `protobuf:"bytes,1,opt,name=token_pair,json=tokenPair,proto3" json:"token_pair,omitempty"`
+	Tokens        *TokenPair             `protobuf:"bytes,1,opt,name=tokens,proto3" json:"tokens,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -259,9 +291,9 @@ func (*RegisterResponse) Descriptor() ([]byte, []int) {
 	return file_auth_v1_auth_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *RegisterResponse) GetTokenPair() *TokenPair {
+func (x *RegisterResponse) GetTokens() *TokenPair {
 	if x != nil {
-		return x.TokenPair
+		return x.Tokens
 	}
 	return nil
 }
@@ -312,7 +344,7 @@ func (x *RefreshRequest) GetRefreshToken() string {
 
 type RefreshResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	TokenPair     *TokenPair             `protobuf:"bytes,1,opt,name=token_pair,json=tokenPair,proto3" json:"token_pair,omitempty"`
+	Tokens        *TokenPair             `protobuf:"bytes,1,opt,name=tokens,proto3" json:"tokens,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -347,9 +379,9 @@ func (*RefreshResponse) Descriptor() ([]byte, []int) {
 	return file_auth_v1_auth_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *RefreshResponse) GetTokenPair() *TokenPair {
+func (x *RefreshResponse) GetTokens() *TokenPair {
 	if x != nil {
-		return x.TokenPair
+		return x.Tokens
 	}
 	return nil
 }
@@ -446,34 +478,36 @@ var File_auth_v1_auth_proto protoreflect.FileDescriptor
 
 const file_auth_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x12auth/v1/auth.proto\x12\aauth.v1\x1a\x1bgoogle/protobuf/empty.proto\"S\n" +
+	"\x12auth/v1/auth.proto\x12\aauth.v1\x1a\x1bgoogle/protobuf/empty.proto\"\xe5\x01\n" +
 	"\tTokenPair\x12!\n" +
-	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
-	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"@\n" +
+	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12*\n" +
+	"\x11access_expires_at\x18\x02 \x01(\x03R\x0faccessExpiresAt\x12#\n" +
+	"\rrefresh_token\x18\x03 \x01(\tR\frefreshToken\x12,\n" +
+	"\x12refresh_expires_at\x18\x04 \x01(\x03R\x10refreshExpiresAt\x12\x1d\n" +
+	"\n" +
+	"session_id\x18\x05 \x01(\tR\tsessionId\x12\x17\n" +
+	"\auser_id\x18\x06 \x01(\x03R\x06userId\"@\n" +
 	"\fLoginRequest\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"B\n" +
-	"\rLoginResponse\x121\n" +
-	"\n" +
-	"token_pair\x18\x01 \x01(\v2\x12.auth.v1.TokenPairR\ttokenPair\"C\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\";\n" +
+	"\rLoginResponse\x12*\n" +
+	"\x06tokens\x18\x01 \x01(\v2\x12.auth.v1.TokenPairR\x06tokens\"C\n" +
 	"\x0fRegisterRequest\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"E\n" +
-	"\x10RegisterResponse\x121\n" +
-	"\n" +
-	"token_pair\x18\x01 \x01(\v2\x12.auth.v1.TokenPairR\ttokenPair\"5\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\">\n" +
+	"\x10RegisterResponse\x12*\n" +
+	"\x06tokens\x18\x01 \x01(\v2\x12.auth.v1.TokenPairR\x06tokens\"5\n" +
 	"\x0eRefreshRequest\x12#\n" +
-	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"D\n" +
-	"\x0fRefreshResponse\x121\n" +
-	"\n" +
-	"token_pair\x18\x01 \x01(\v2\x12.auth.v1.TokenPairR\ttokenPair\"4\n" +
+	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"=\n" +
+	"\x0fRefreshResponse\x12*\n" +
+	"\x06tokens\x18\x01 \x01(\v2\x12.auth.v1.TokenPairR\x06tokens\"4\n" +
 	"\rLogoutRequest\x12#\n" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"7\n" +
 	"\x10LogoutAllRequest\x12#\n" +
-	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken2\xb8\x02\n" +
+	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken2\xbe\x02\n" +
 	"\vAuthService\x126\n" +
-	"\x05Login\x12\x15.auth.v1.LoginRequest\x1a\x16.auth.v1.LoginResponse\x129\n" +
-	"\bRegister\x12\x15.auth.v1.LoginRequest\x1a\x16.auth.v1.LoginResponse\x12<\n" +
+	"\x05Login\x12\x15.auth.v1.LoginRequest\x1a\x16.auth.v1.LoginResponse\x12?\n" +
+	"\bRegister\x12\x18.auth.v1.RegisterRequest\x1a\x19.auth.v1.RegisterResponse\x12<\n" +
 	"\aRefresh\x12\x17.auth.v1.RefreshRequest\x1a\x18.auth.v1.RefreshResponse\x128\n" +
 	"\x06Logout\x12\x16.auth.v1.LogoutRequest\x1a\x16.google.protobuf.Empty\x12>\n" +
 	"\tLogoutAll\x12\x19.auth.v1.LogoutAllRequest\x1a\x16.google.protobuf.EmptyB\"Z be2/contracts/gen/auth/v1;authv1b\x06proto3"
@@ -504,16 +538,16 @@ var file_auth_v1_auth_proto_goTypes = []any{
 	(*empty.Empty)(nil),      // 9: google.protobuf.Empty
 }
 var file_auth_v1_auth_proto_depIdxs = []int32{
-	0, // 0: auth.v1.LoginResponse.token_pair:type_name -> auth.v1.TokenPair
-	0, // 1: auth.v1.RegisterResponse.token_pair:type_name -> auth.v1.TokenPair
-	0, // 2: auth.v1.RefreshResponse.token_pair:type_name -> auth.v1.TokenPair
+	0, // 0: auth.v1.LoginResponse.tokens:type_name -> auth.v1.TokenPair
+	0, // 1: auth.v1.RegisterResponse.tokens:type_name -> auth.v1.TokenPair
+	0, // 2: auth.v1.RefreshResponse.tokens:type_name -> auth.v1.TokenPair
 	1, // 3: auth.v1.AuthService.Login:input_type -> auth.v1.LoginRequest
-	1, // 4: auth.v1.AuthService.Register:input_type -> auth.v1.LoginRequest
+	3, // 4: auth.v1.AuthService.Register:input_type -> auth.v1.RegisterRequest
 	5, // 5: auth.v1.AuthService.Refresh:input_type -> auth.v1.RefreshRequest
 	7, // 6: auth.v1.AuthService.Logout:input_type -> auth.v1.LogoutRequest
 	8, // 7: auth.v1.AuthService.LogoutAll:input_type -> auth.v1.LogoutAllRequest
 	2, // 8: auth.v1.AuthService.Login:output_type -> auth.v1.LoginResponse
-	2, // 9: auth.v1.AuthService.Register:output_type -> auth.v1.LoginResponse
+	4, // 9: auth.v1.AuthService.Register:output_type -> auth.v1.RegisterResponse
 	6, // 10: auth.v1.AuthService.Refresh:output_type -> auth.v1.RefreshResponse
 	9, // 11: auth.v1.AuthService.Logout:output_type -> google.protobuf.Empty
 	9, // 12: auth.v1.AuthService.LogoutAll:output_type -> google.protobuf.Empty

@@ -10,7 +10,7 @@ import (
 type Config struct {
 	DepTimeout      time.Duration // таймаут на один вызов зависимости
 	ShutdownTimeout time.Duration
-	ClientSvcAddr   string
+	AuthSvcAddr     string
 	Host            string
 	Port            string
 	User            string
@@ -25,7 +25,7 @@ func LoadConfig() (Config, error) {
 		User:            os.Getenv("DB_USER"),
 		DB:              os.Getenv("DB_NAME"),
 		SSLMode:         os.Getenv("SSLMODE"),
-		ClientSvcAddr:   os.Getenv("CLIENT_SVC_ADDR_FULL"),
+		AuthSvcAddr:     os.Getenv("AUTH_SVC_ADDR_FULL"),
 		DepTimeout:      msEnv("DEP_TIMEOUT_MS", 1500) * time.Millisecond,
 		ShutdownTimeout: msEnv("SHUTDOWN_TIMEOUT_MS", 10_000) * time.Millisecond,
 	}

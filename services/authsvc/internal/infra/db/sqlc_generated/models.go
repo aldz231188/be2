@@ -19,7 +19,7 @@ type Session struct {
 
 type User struct {
 	ID           uuid.UUID
-	Username     string
+	Login        string
 	PasswordHash string
 	CreatedAt    pgtype.Timestamptz
 	TokenVersion int32

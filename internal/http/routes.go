@@ -8,14 +8,16 @@ import (
 	"net/http"
 )
 
-func RegisterRoutes(h handlers.Handler, jwt *middleware.JWT) *http.ServeMux {
+func RegisterRoutes(h handlers.Handler, authMW *middleware.Auth) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /register", h.HandleRegister)
-	mux.HandleFunc("POST /login", h.HandleLogin)
-	mux.HandleFunc("POST /refresh", h.HandleRefresh)
-	mux.HandleFunc("POST /logout", h.HandleLogout)
-	mux.HandleFunc("POST /logout_all", h.HandleLogoutAll)
-	mux.HandleFunc("POST /createclient", jwt.Protect(h.HandleCreateClient))
+	mux.HandleFunc("POST /register", h.Register)
+	// mux.HandleFunc("POST /login", h.Login)
+	// mux.HandleFunc("POST /refresh", h.Refresh)
+	// mux.HandleFunc("POST /logout", h.Logout)
+	// mux.HandleFunc("POST /logout_all", h.LogoutAll)
+
+	mux.Handle("POST /createclient", authMW.Require(http.HandlerFunc(h.CreateClient)))
+	// mux.HandleFunc("POST /createclient", authMW.Require(h.HandleCreateClient))
 	// mux.HandleFunc("POST /deleteclient", jwt.Protect(h.HandleDeleteClient))
 	mux.HandleFunc("/swagger/", httpSwagger.WrapHandler) // /swagger/index.html
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {

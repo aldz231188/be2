@@ -1,13 +1,19 @@
 package di
 
 import (
-	"be2/internal/app"
 	usecase "be2/internal/app/usecase"
-	client "be2/internal/clients/user"
+	"be2/internal/authz"
+	auth "be2/internal/clients/auth"
+	client "be2/internal/clients/client"
 	router "be2/internal/http"
-	"be2/internal/http/middleware"
 	"be2/internal/http/v1/handlers"
-	"be2/internal/infra/db"
+
+	// "example.com/bff/internal/clients/auth"
+	"be2/internal/config"
+	"be2/internal/grpcutil"
+	// "example.com/bff/internal/http/handlers"
+	"be2/internal/http/middleware"
+	// "example.com/bff/internal/http/server"
 	"log/slog"
 	"os"
 
@@ -15,17 +21,22 @@ import (
 )
 
 var App = fx.Options(
-	db.Module,
+	authz.Module,
+	grpcutil.Module,
+	middleware.Module,
+	config.Module,
 	fx.Provide(
 		newLogger,
 		usecase.NewClientUsecase,
+		usecase.NewAuthUsecase,
 		client.NewConn,
 		client.NewService,
-		fx.Annotate(
-			app.NewAuthService,
-			fx.As(new(app.AuthService)),
-		),
-		middleware.NewJWT,
+		auth.NewConn,
+		auth.NewService,
+		// fx.Annotate(
+		// 	app.NewAuthService,
+		// 	fx.As(new(app.AuthService)),
+		// ),
 	),
 	fx.Provide(handlers.NewHandler),
 	fx.Invoke(router.RegisterServer),

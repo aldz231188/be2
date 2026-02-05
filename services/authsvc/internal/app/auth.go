@@ -26,20 +26,23 @@ var (
 )
 
 type TokenPair struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	AccessToken      string
+	AccessExpiresAt  int64
+	RefreshToken     string
+	RefreshExpiresAt int64
+	SessionId        string
 }
 
 type TokenClaims struct {
-	TokenType    string `json:"type"`
-	TokenVersion int32  `json:"tv"`
-	SessionID    string `json:"sid"`
+	TokenType    string
+	TokenVersion int32
+	SessionID    string
 	jwt.RegisteredClaims
 }
 
 type AuthService interface {
-	Authenticate(ctx context.Context, username, password string) (TokenPair, error)
-	Register(ctx context.Context, username, password string) (TokenPair, error)
+	Authenticate(ctx context.Context, login, password string) (TokenPair, error)
+	Register(ctx context.Context, login, password string) (TokenPair, error)
 	Refresh(ctx context.Context, refreshToken string) (TokenPair, error)
 	LogoutCurrent(ctx context.Context, refreshToken string) error
 	LogoutAll(ctx context.Context, refreshToken string) error
@@ -66,8 +69,8 @@ func NewAuthService(users domain.UserRepo, sessions domain.SessionRepo, secrets 
 	}
 }
 
-func (s *authService) Authenticate(ctx context.Context, username, password string) (TokenPair, error) {
-	user, err := s.users.GetByUsername(ctx, username)
+func (s *authService) Authenticate(ctx context.Context, login, password string) (TokenPair, error) {
+	user, err := s.users.GetByLogin(ctx, login)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			return TokenPair{}, ErrInvalidCredentials
@@ -82,8 +85,8 @@ func (s *authService) Authenticate(ctx context.Context, username, password strin
 	return s.issueSessionTokens(ctx, user)
 }
 
-func (s *authService) Register(ctx context.Context, username, password string) (TokenPair, error) {
-	if strings.TrimSpace(username) == "" || strings.TrimSpace(password) == "" {
+func (s *authService) Register(ctx context.Context, login, password string) (TokenPair, error) {
+	if strings.TrimSpace(login) == "" || strings.TrimSpace(password) == "" {
 		return TokenPair{}, ErrInvalidCredentials
 	}
 
@@ -92,7 +95,7 @@ func (s *authService) Register(ctx context.Context, username, password string) (
 		return TokenPair{}, err
 	}
 
-	user, err := s.users.CreateUser(ctx, domain.User{Username: username, PasswordHash: string(hash)})
+	user, err := s.users.CreateUser(ctx, domain.User{Login: login, PasswordHash: string(hash)})
 	if err != nil {
 		return TokenPair{}, err
 	}

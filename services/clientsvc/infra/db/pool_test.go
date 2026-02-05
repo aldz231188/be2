@@ -36,8 +36,8 @@ func TestBuildPostgresDSN(t *testing.T) {
 		t.Fatalf("unexpected sslmode: %s", ssl)
 	}
 
-	if username := u.User.Username(); username != "appuser" {
-		t.Fatalf("unexpected username: %s", username)
+	if login := u.User.Username(); login != "appuser" {
+		t.Fatalf("unexpected login: %s", login)
 	}
 	if password, ok := u.User.Password(); !ok || password != "s3cr3t" {
 		t.Fatalf("unexpected password: %s", password)
@@ -57,7 +57,7 @@ func TestBuildPostgresDSN_EncodesCredentials(t *testing.T) {
 	dsn := buildPostgresDSN(cfg, password)
 
 	if !strings.Contains(dsn, "us%20er") {
-		t.Fatalf("username should be percent-encoded, got %s", dsn)
+		t.Fatalf("login should be percent-encoded, got %s", dsn)
 	}
 	if !strings.Contains(dsn, "p%40ss%3Aw%2For%3Fd") {
 		t.Fatalf("password should be percent-encoded, got %s", dsn)
@@ -68,8 +68,8 @@ func TestBuildPostgresDSN_EncodesCredentials(t *testing.T) {
 		t.Fatalf("failed to parse dsn: %v", err)
 	}
 
-	if username := u.User.Username(); username != "us er" {
-		t.Fatalf("decoded username mismatch: %s", username)
+	if login := u.User.Username(); login != "us er" {
+		t.Fatalf("decoded login mismatch: %s", login)
 	}
 	if decoded, ok := u.User.Password(); !ok || decoded != password {
 		t.Fatalf("decoded password mismatch: %s", decoded)

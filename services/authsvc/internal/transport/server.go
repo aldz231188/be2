@@ -20,17 +20,17 @@ func NewGRPCServer() *grpc.Server {
 }
 
 func NewListener(cfg config.Config) (net.Listener, error) {
-	return net.Listen("tcp", cfg.authSvcAddr)
+	return net.Listen("tcp", cfg.AuthSvcAddr)
 }
 
 func RegisterHandlers(s *grpc.Server, h *handlers.Handler) {
-	authv1.RegisterauthServiceServer(s, h)
+	authv1.RegisterAuthServiceServer(s, h)
 }
 
 func Run(lc fx.Lifecycle, s *grpc.Server, lis net.Listener, cfg config.Config) {
 	lc.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			log.Printf("[authsvc] gRPC on %s", cfg.authSvcAddr) // добавить проверку на пустой адрес
+			log.Printf("[authsvc] gRPC on %s", cfg.AuthSvcAddr) // добавить проверку на пустой адрес
 			go func() {
 				if err := s.Serve(lis); err != nil {
 					log.Printf("[authsvc] serve error: %v", err)

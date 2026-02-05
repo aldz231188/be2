@@ -478,7 +478,7 @@ const docTemplate = `{
                 "password": {
                     "type": "string"
                 },
-                "username": {
+                "login": {
                     "type": "string"
                 }
             }
@@ -505,7 +505,7 @@ const docTemplate = `{
                 "password": {
                     "type": "string"
                 },
-                "username": {
+                "login": {
                     "type": "string"
                 }
             }
