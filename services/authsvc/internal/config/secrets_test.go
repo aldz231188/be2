@@ -61,41 +61,41 @@ func TestLoadSecrets_FromFiles(t *testing.T) {
 	}
 
 	t.Setenv("DB_PASSWORD_FILE", dbPath)
-	t.Setenv("JWT_SECRET_FILE", jwtPath)
+	t.Setenv("JWT_PRIVATE_KEY_FILE", jwtPath)
 	t.Setenv("DB_PASSWORD", "")
-	t.Setenv("JWT_SECRET", "")
+	t.Setenv("JWT_PRIVATE_KEY", "")
 
 	secrets, err := LoadSecrets()
 	if err != nil {
 		t.Fatalf("LoadSecrets returned error: %v", err)
 	}
 
-	if secrets.DBPassword != "db-from-file" || secrets.JWTSecret != "jwt-from-file" {
+	if secrets.DBPassword != "db-from-file" || secrets.JWTPrivateKey != "jwt-from-file" {
 		t.Fatalf("unexpected secrets: %+v", secrets)
 	}
 }
 
 func TestLoadSecrets_FromEnv(t *testing.T) {
 	t.Setenv("DB_PASSWORD_FILE", "")
-	t.Setenv("JWT_SECRET_FILE", "")
+	t.Setenv("JWT_PRIVATE_KEY_FILE", "")
 	t.Setenv("DB_PASSWORD", "db-env")
-	t.Setenv("JWT_SECRET", "jwt-env")
+	t.Setenv("JWT_PRIVATE_KEY", "jwt-env")
 
 	secrets, err := LoadSecrets()
 	if err != nil {
 		t.Fatalf("LoadSecrets returned error: %v", err)
 	}
 
-	if secrets.DBPassword != "db-env" || secrets.JWTSecret != "jwt-env" {
+	if secrets.DBPassword != "db-env" || secrets.JWTPrivateKey != "jwt-env" {
 		t.Fatalf("unexpected secrets: %+v", secrets)
 	}
 }
 
 func TestLoadSecrets_MissingValues(t *testing.T) {
 	t.Setenv("DB_PASSWORD_FILE", "")
-	t.Setenv("JWT_SECRET_FILE", "")
+	t.Setenv("JWT_PRIVATE_KEY_FILE", "")
 	t.Setenv("DB_PASSWORD", "")
-	t.Setenv("JWT_SECRET", "")
+	t.Setenv("JWT_PRIVATE_KEY", "")
 
 	if _, err := LoadSecrets(); err == nil {
 		t.Fatal("expected error when required secrets are missing")

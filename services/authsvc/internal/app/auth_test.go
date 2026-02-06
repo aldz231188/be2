@@ -3,7 +3,12 @@ package app
 import (
 	"be2/services/authsvc/internal/config"
 	"be2/services/authsvc/internal/domain"
+	"be2/services/authsvc/internal/jwtkeys"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"testing"
 	"time"
@@ -108,10 +113,33 @@ func (r *fakeSessionRepo) RevokeSessionsByUser(ctx context.Context, userID uuid.
 	return nil
 }
 
+func newTestService(t *testing.T, users domain.UserRepo, sessions domain.SessionRepo) (AuthService, *jwtkeys.RSAKey) {
+	t.Helper()
+
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+	pemKey := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(key),
+	})
+	rsaKey, err := jwtkeys.NewRSAKey(&config.Secrets{JWTPrivateKey: string(pemKey)})
+	if err != nil {
+		t.Fatalf("build rsa key: %v", err)
+	}
+
+	cfg := config.Config{
+		JWTIssuer:   "authsvc",
+		JWTAudience: "be2",
+	}
+	return NewAuthService(users, sessions, rsaKey, cfg), rsaKey
+}
+
 func TestRegisterAndAuthenticate(t *testing.T) {
 	users := newFakeUserRepo()
 	sessions := newFakeSessionRepo()
-	service := NewAuthService(users, sessions, &config.Secrets{JWTSecret: "secret"})
+	service, rsaKey := newTestService(t, users, sessions)
 
 	pair, err := service.Register(context.Background(), "user", "password")
 	if err != nil {
@@ -122,8 +150,8 @@ func TestRegisterAndAuthenticate(t *testing.T) {
 	}
 
 	parsed, err := jwt.ParseWithClaims(pair.AccessToken, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte("secret"), nil
-	})
+		return rsaKey.Public, nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodRS256.Alg()}), jwt.WithIssuer("authsvc"), jwt.WithAudience("be2"))
 	if err != nil || !parsed.Valid {
 		t.Fatalf("failed to parse access token: %v", err)
 	}
@@ -145,7 +173,7 @@ func TestAuthenticateInvalidPassword(t *testing.T) {
 	users.users[user.ID] = user
 	users.usersByLogin[user.Login] = user.ID
 
-	service := NewAuthService(users, sessions, &config.Secrets{JWTSecret: "secret"})
+	service, _ := newTestService(t, users, sessions)
 	if _, err := service.Authenticate(context.Background(), "user", "wrong"); !errors.Is(err, ErrInvalidCredentials) {
 		t.Fatalf("expected invalid credentials, got %v", err)
 	}
@@ -159,7 +187,7 @@ func TestRefreshAndSessionRevocation(t *testing.T) {
 	users.users[user.ID] = user
 	users.usersByLogin[user.Login] = user.ID
 
-	service := NewAuthService(users, sessions, &config.Secrets{JWTSecret: "secret"})
+	service, _ := newTestService(t, users, sessions)
 	pair, err := service.Authenticate(context.Background(), "user", "correct")
 	if err != nil {
 		t.Fatalf("authenticate failed: %v", err)
@@ -186,7 +214,7 @@ func TestLogoutCurrent(t *testing.T) {
 	users.users[user.ID] = user
 	users.usersByLogin[user.Login] = user.ID
 
-	service := NewAuthService(users, sessions, &config.Secrets{JWTSecret: "secret"})
+	service, _ := newTestService(t, users, sessions)
 	pair, err := service.Authenticate(context.Background(), "user", "correct")
 	if err != nil {
 		t.Fatalf("authenticate failed: %v", err)
@@ -205,7 +233,7 @@ func TestLogoutAll(t *testing.T) {
 	users.users[user.ID] = user
 	users.usersByLogin[user.Login] = user.ID
 
-	service := NewAuthService(users, sessions, &config.Secrets{JWTSecret: "secret"})
+	service, _ := newTestService(t, users, sessions)
 	pair, err := service.Authenticate(context.Background(), "user", "correct")
 	if err != nil {
 		t.Fatalf("authenticate failed: %v", err)
@@ -227,7 +255,7 @@ func TestValidateAccessToken(t *testing.T) {
 	users.users[user.ID] = user
 	users.usersByLogin[user.Login] = user.ID
 
-	service := NewAuthService(users, sessions, &config.Secrets{JWTSecret: "secret"})
+	service, _ := newTestService(t, users, sessions)
 	pair, err := service.Authenticate(context.Background(), "user", "correct")
 	if err != nil {
 		t.Fatalf("authenticate failed: %v", err)

@@ -8,9 +8,8 @@ import (
 )
 
 type Secrets struct {
-	DBPassword string
-	JWTSecret  string
-	// JWTPrivateKeyPEM  []byte
+	DBPassword    string
+	JWTPrivateKey string
 }
 
 func readSecretFileOrEnv(fileKey, envKey string) (string, error) {
@@ -33,7 +32,7 @@ func LoadSecrets() (*Secrets, error) {
 		return nil, err
 	}
 
-	jwtSecret, err := readSecretFileOrEnv("JWT_SECRET_FILE", "JWT_SECRET")
+	jwtPrivateKey, err := readSecretFileOrEnv("JWT_PRIVATE_KEY_FILE", "JWT_PRIVATE_KEY")
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +45,7 @@ func LoadSecrets() (*Secrets, error) {
 	// if err != nil { return nil, err }
 
 	return &Secrets{
-		DBPassword: dbPass,
-		JWTSecret:  jwtSecret,
-		// JWTPrivateKeyPEM: key,
+		DBPassword:    dbPass,
+		JWTPrivateKey: jwtPrivateKey,
 	}, nil
 }
