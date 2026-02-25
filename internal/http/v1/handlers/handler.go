@@ -3,6 +3,7 @@ package handlers
 import (
 	// "be2/internal/app"
 	"be2/internal/app/usecase"
+	"be2/internal/authz"
 	"be2/internal/config"
 	"be2/internal/domain"
 	"be2/internal/grpcutil"
@@ -19,21 +20,25 @@ const statusClientClosedRequest = 499
 
 type Handler struct {
 	// AS     app.AddressService
-	cfg    config.Config
-	CS     usecase.ClientUsecase
-	Auth   usecase.AuthUsecase
-	logger *slog.Logger
+	cfg         config.Config
+	CS          usecase.ClientUsecase
+	Auth        usecase.AuthUsecase
+	validator   *authz.Validator
+	revocations *authz.RevokedSessions
+	logger      *slog.Logger
 }
 
-func NewHandler(cfg config.Config, csi usecase.ClientUsecase, auth usecase.AuthUsecase, logger *slog.Logger) Handler {
+func NewHandler(cfg config.Config, csi usecase.ClientUsecase, auth usecase.AuthUsecase, validator *authz.Validator, revocations *authz.RevokedSessions, logger *slog.Logger) Handler {
 	if logger == nil {
 		logger = slog.Default()
 	}
 	return Handler{
 		// AS:     asi,
-		CS:     csi,
-		Auth:   auth,
-		logger: logger,
+		CS:          csi,
+		Auth:        auth,
+		validator:   validator,
+		revocations: revocations,
+		logger:      logger,
 	}
 }
 
@@ -199,7 +204,12 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		h.respondError(w, status, err.Error(), nil)
 		return
 	}
-	// h.setRefreshCookie(w, tokens.RefreshToken, time.Unix(tokens.RefreshExpiresAt, 0))
+
+	if h.validator != nil && h.revocations != nil {
+		if claims, err := h.validator.ParseRefresh(req.RefreshToken); err == nil && claims.ID != "" && claims.ExpiresAt != nil {
+			h.revocations.Revoke(claims.ID, claims.ExpiresAt.Time)
+		}
+	}
 
 	h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
 }

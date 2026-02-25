@@ -22,6 +22,7 @@ import (
 
 var App = fx.Options(
 	authz.Module,
+	authz.RevocationModule,
 	grpcutil.Module,
 	middleware.Module,
 	config.Module,

@@ -48,6 +48,14 @@ func NewValidator(lc fx.Lifecycle, cfg config.Config) (*Validator, error) {
 }
 
 func (v *Validator) ParseAccess(tokenStr string) (*Claims, error) {
+	return v.parseToken(tokenStr, "access")
+}
+
+func (v *Validator) ParseRefresh(tokenStr string) (*Claims, error) {
+	return v.parseToken(tokenStr, "refresh")
+}
+
+func (v *Validator) parseToken(tokenStr, expectedType string) (*Claims, error) {
 	var c Claims
 
 	opts := []jwt.ParserOption{
@@ -65,7 +73,7 @@ func (v *Validator) ParseAccess(tokenStr string) (*Claims, error) {
 		return nil, err
 	}
 
-	if c.Type != "" && c.Type != "access" {
+	if c.Type != "" && c.Type != expectedType {
 		return nil, fmt.Errorf("invalid token type: %s", c.Type)
 	}
 
