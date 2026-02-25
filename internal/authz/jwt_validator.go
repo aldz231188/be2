@@ -2,6 +2,8 @@ package authz
 
 import (
 	"context"
+	"fmt"
+	"strconv"
 	"time"
 
 	keyfunc "github.com/MicahParks/keyfunc/v3"
@@ -15,6 +17,7 @@ type Claims struct {
 	UID   int64    `json:"uid"`
 	Ver   int      `json:"ver"`
 	Roles []string `json:"roles,omitempty"`
+	Type  string   `json:"TokenType,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -59,6 +62,19 @@ func (v *Validator) ParseAccess(tokenStr string) (*Claims, error) {
 	if err != nil || !tok.Valid {
 		return nil, err
 	}
+
+	if c.Type != "" && c.Type != "access" {
+		return nil, fmt.Errorf("invalid token type: %s", c.Type)
+	}
+
+	if c.UID == 0 {
+		uid, convErr := strconv.ParseInt(c.Subject, 10, 64)
+		if convErr != nil || uid <= 0 {
+			return nil, fmt.Errorf("invalid token subject")
+		}
+		c.UID = uid
+	}
+
 	return &c, nil
 }
 
