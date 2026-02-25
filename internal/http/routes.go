@@ -13,7 +13,7 @@ func RegisterRoutes(h handlers.Handler, authMW *middleware.Auth) *http.ServeMux 
 	mux.HandleFunc("POST /register", h.Register)
 	// mux.HandleFunc("POST /login", h.Login)
 	// mux.HandleFunc("POST /refresh", h.Refresh)
-	// mux.HandleFunc("POST /logout", h.Logout)
+	mux.HandleFunc("POST /logout", h.Logout)
 	// mux.HandleFunc("POST /logout_all", h.LogoutAll)
 
 	mux.Handle("POST /createclient", authMW.Require(http.HandlerFunc(h.CreateClient)))

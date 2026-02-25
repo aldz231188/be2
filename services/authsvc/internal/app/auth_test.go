@@ -220,7 +220,7 @@ func TestLogoutCurrent(t *testing.T) {
 		t.Fatalf("authenticate failed: %v", err)
 	}
 
-	if err := service.LogoutCurrent(context.Background(), pair.RefreshToken); err != nil {
+	if err := service.Logout(context.Background(), pair.RefreshToken); err != nil {
 		t.Fatalf("logout current failed: %v", err)
 	}
 }

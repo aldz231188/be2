@@ -46,7 +46,7 @@ type AuthService interface {
 	Authenticate(ctx context.Context, login, password string) (TokenPair, error)
 	Register(ctx context.Context, login, password string) (TokenPair, error)
 	Refresh(ctx context.Context, refreshToken string) (TokenPair, error)
-	LogoutCurrent(ctx context.Context, refreshToken string) error
+	Logout(ctx context.Context, refreshToken string) error
 	LogoutAll(ctx context.Context, refreshToken string) error
 	ValidateAccessToken(ctx context.Context, token string) (*TokenClaims, error)
 }
@@ -127,7 +127,7 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (TokenPa
 	return s.issueSessionTokens(ctx, user)
 }
 
-func (s *authService) LogoutCurrent(ctx context.Context, refreshToken string) error {
+func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	claims, err := s.parseToken(refreshToken, tokenTypeRefresh)
 	if err != nil {
 		return err

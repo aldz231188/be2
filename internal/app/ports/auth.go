@@ -7,6 +7,6 @@ type AuthService interface {
 	Register(ctx context.Context, login, password string) (*TokenPair, error)
 	// Login(ctx context.Context) (*LoginResponse, error)
 	// Refresh(ctx context.Context) (*RefreshResponse, error)
-	// Logout(ctx context.Context) (*empty.Empty, error)
+	Logout(ctx context.Context, refreshToken string) error
 	// LogoutAll(ctx context.Context) (*empty.Empty, error)
 }

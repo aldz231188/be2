@@ -8,14 +8,6 @@ import (
 	"be2/internal/app/ports"
 )
 
-// type TokenPair struct {
-// 	AccessToken      string
-// 	AccessExpiresAt  int64
-// 	RefreshToken     string
-// 	RefreshExpiresAt int64
-// 	SessionId        string
-// }
-
 type Service struct {
 	c authv1.AuthServiceClient
 }
@@ -29,15 +21,23 @@ func (s *Service) Register(ctx context.Context, login, password string) (*ports.
 	if err != nil {
 		return nil, err
 	}
-	a := resp.GetTokens()
-	if a == nil {
+	tokens := resp.GetTokens()
+	if tokens == nil {
 		return nil, errors.New("authsvc returned empty token")
 	}
 	return &ports.TokenPair{
-		AccessToken:      a.AccessToken,
-		AccessExpiresAt:  a.AccessExpiresAt,
-		RefreshToken:     a.RefreshToken,
-		RefreshExpiresAt: a.RefreshExpiresAt,
-		SessionId:        a.SessionId,
+		AccessToken:      tokens.AccessToken,
+		AccessExpiresAt:  tokens.AccessExpiresAt,
+		RefreshToken:     tokens.RefreshToken,
+		RefreshExpiresAt: tokens.RefreshExpiresAt,
+		SessionId:        tokens.SessionId,
 	}, nil
+}
+func (s *Service) Logout(ctx context.Context, refreshToken string) error {
+	_, err := s.c.Logout(ctx, &authv1.LogoutRequest{RefreshToken: refreshToken})
+	if err != nil {
+		return err
+	}
+	return nil
+
 }
