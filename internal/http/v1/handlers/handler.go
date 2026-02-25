@@ -12,7 +12,6 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -256,8 +255,8 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateClient(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
-	uid, ok := r.Context().Value(grpcutil.CtxUserID).(int64)
-	if !ok || uid <= 0 {
+	uid, ok := r.Context().Value(grpcutil.CtxUserID).(string)
+	if !ok || uid == "" {
 		h.respondError(w, http.StatusUnauthorized, "invalid token subject", nil)
 		return
 	}
@@ -274,7 +273,7 @@ func (h *Handler) CreateClient(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	clientID, err := h.CS.Create(ctx, strconv.FormatInt(uid, 10), clientRow.ClientName, clientRow.ClientSurname)
+	clientID, err := h.CS.Create(ctx, uid, clientRow.ClientName, clientRow.ClientSurname)
 	if err != nil {
 		h.handleDomainError(w, err)
 		return

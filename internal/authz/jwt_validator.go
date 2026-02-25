@@ -3,7 +3,9 @@ package authz
 import (
 	"context"
 	"fmt"
-	"strconv"
+	"strings"
+
+	"github.com/google/uuid"
 	"time"
 
 	keyfunc "github.com/MicahParks/keyfunc/v3"
@@ -14,7 +16,7 @@ import (
 )
 
 type Claims struct {
-	UID   int64    `json:"uid"`
+	UID   string   `json:"uid,omitempty"`
 	Ver   int      `json:"ver"`
 	Roles []string `json:"roles,omitempty"`
 	Type  string   `json:"TokenType,omitempty"`
@@ -67,13 +69,14 @@ func (v *Validator) ParseAccess(tokenStr string) (*Claims, error) {
 		return nil, fmt.Errorf("invalid token type: %s", c.Type)
 	}
 
-	if c.UID == 0 {
-		uid, convErr := strconv.ParseInt(c.Subject, 10, 64)
-		if convErr != nil || uid <= 0 {
-			return nil, fmt.Errorf("invalid token subject")
-		}
-		c.UID = uid
+	uid := strings.TrimSpace(c.UID)
+	if uid == "" {
+		uid = strings.TrimSpace(c.Subject)
 	}
+	if _, parseErr := uuid.Parse(uid); parseErr != nil {
+		return nil, fmt.Errorf("invalid token subject")
+	}
+	c.UID = uid
 
 	return &c, nil
 }
