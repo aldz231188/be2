@@ -12,7 +12,7 @@ type Service struct {
 	c authv1.AuthServiceClient
 }
 
-func NewService(conn Conn) *Service {
+func NewService(conn Conn) ports.AuthService {
 	return &Service{c: authv1.NewAuthServiceClient(conn.ClientConn)}
 }
 

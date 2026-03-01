@@ -1,16 +1,16 @@
 package middleware
 
 import (
-	"be2/internal/clients/auth"
+	"be2/internal/app/ports"
 	"be2/internal/grpcutil"
 	"go.uber.org/fx"
 	"net/http"
 	"strings"
 )
 
-type Auth struct{ C *auth.Service }
+type Auth struct{ C ports.AuthService }
 
-func NewAuth(c *auth.Service) *Auth { return &Auth{C: c} }
+func NewAuth(c ports.AuthService) *Auth { return &Auth{C: c} }
 
 func (m *Auth) Require(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
