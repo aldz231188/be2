@@ -12,9 +12,11 @@ type Service struct {
 	c authv1.AuthServiceClient
 }
 
-func NewService(conn Conn) ports.AuthService {
+func NewService(conn Conn) *Service {
 	return &Service{c: authv1.NewAuthServiceClient(conn.ClientConn)}
 }
+
+var _ ports.AuthService = (*Service)(nil)
 
 func (s *Service) Register(ctx context.Context, login, password string) (*ports.TokenPair, error) {
 	resp, err := s.c.Register(ctx, &authv1.RegisterRequest{Login: login, Password: password})
@@ -40,4 +42,15 @@ func (s *Service) Logout(ctx context.Context, refreshToken string) error {
 	}
 	return nil
 
+}
+
+func (s *Service) ValidateAccess(ctx context.Context, accessToken string) (string, error) {
+	resp, err := s.c.ValidateAccess(ctx, &authv1.ValidateAccessRequest{AccessToken: accessToken})
+	if err != nil {
+		return "", err
+	}
+	if resp.GetUserId() == "" {
+		return "", errors.New("authsvc returned empty user id")
+	}
+	return resp.GetUserId(), nil
 }

@@ -1,19 +1,16 @@
 package middleware
 
 import (
-	"be2/internal/authz"
+	"be2/internal/clients/auth"
 	"be2/internal/grpcutil"
 	"go.uber.org/fx"
 	"net/http"
 	"strings"
 )
 
-type Auth struct {
-	V *authz.Validator
-	R *authz.RevokedSessions
-}
+type Auth struct{ C *auth.Service }
 
-func NewAuth(v *authz.Validator, r *authz.RevokedSessions) *Auth { return &Auth{V: v, R: r} }
+func NewAuth(c *auth.Service) *Auth { return &Auth{C: c} }
 
 func (m *Auth) Require(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -22,16 +19,15 @@ func (m *Auth) Require(next http.Handler) http.Handler {
 			http.Error(w, "missing bearer token", http.StatusUnauthorized)
 			return
 		}
-		claims, err := m.V.ParseAccess(strings.TrimSpace(h[len("bearer "):]))
+
+		token := strings.TrimSpace(h[len("bearer "):])
+		uid, err := m.C.ValidateAccess(r.Context(), token)
 		if err != nil {
 			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
 		}
-		if m.R != nil && m.R.IsRevoked(claims.ID) {
-			http.Error(w, "session revoked", http.StatusUnauthorized)
-			return
-		}
-		ctx := grpcutil.WithUser(r.Context(), claims.UID, claims.Roles)
+
+		ctx := grpcutil.WithUser(r.Context(), uid, nil)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
