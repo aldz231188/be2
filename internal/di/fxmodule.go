@@ -1,33 +1,40 @@
 package di
 
 import (
-	"be2/internal/app"
+	usecase "be2/internal/app/usecase"
+	auth "be2/internal/clients/auth"
+	client "be2/internal/clients/client"
 	router "be2/internal/http"
-	"be2/internal/http/middleware"
 	"be2/internal/http/v1/handlers"
-	"be2/internal/infra/db"
-	"go.uber.org/fx"
+
+	// "example.com/bff/internal/clients/auth"
+	"be2/internal/config"
+	"be2/internal/grpcutil"
+	// "example.com/bff/internal/http/handlers"
+	"be2/internal/http/middleware"
+	// "example.com/bff/internal/http/server"
 	"log/slog"
 	"os"
+
+	"go.uber.org/fx"
 )
 
 var App = fx.Options(
-	db.Module,
+	grpcutil.Module,
+	middleware.Module,
+	config.Module,
 	fx.Provide(
 		newLogger,
-		fx.Annotate(
-			app.NewAddressService,
-			fx.As(new(app.AddressService)),
-		),
-		fx.Annotate(
-			app.NewClientService,
-			fx.As(new(app.ClientService)),
-		),
-		fx.Annotate(
-			app.NewAuthService,
-			fx.As(new(app.AuthService)),
-		),
-		middleware.NewJWT,
+		usecase.NewClientUsecase,
+		usecase.NewAuthUsecase,
+		client.NewConn,
+		client.NewService,
+		auth.NewConn,
+		auth.NewService,
+		// fx.Annotate(
+		// 	app.NewAuthService,
+		// 	fx.As(new(app.AuthService)),
+		// ),
 	),
 	fx.Provide(handlers.NewHandler),
 	fx.Invoke(router.RegisterServer),

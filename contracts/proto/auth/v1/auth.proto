@@ -1,0 +1,58 @@
+syntax = "proto3";
+package auth.v1;
+
+import "google/protobuf/empty.proto";
+option go_package = "be2/contracts/gen/auth/v1;authv1";
+
+service AuthService {
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc Register (RegisterRequest) returns (RegisterResponse);
+  rpc Refresh (RefreshRequest) returns (RefreshResponse);
+  rpc Logout (LogoutRequest) returns (.google.protobuf.Empty);
+  rpc LogoutAll (LogoutAllRequest) returns (.google.protobuf.Empty);
+  rpc ValidateAccess (ValidateAccessRequest) returns (ValidateAccessResponse);
+  // Быстрая онлайн-проверка (опционально, для BFF с кэшем):
+  //rpc Introspect (IntrospectRequest) returns (IntrospectResponse);
+}
+
+
+// === Messages ===
+
+message TokenPair {
+  string access_token        = 1; // JWT
+  int64  access_expires_at   = 2; // unix seconds (UTC)
+  string refresh_token       = 3; // JWT (ротируется на каждом Refresh)
+  int64  refresh_expires_at  = 4; // unix seconds (UTC)
+  string session_id          = 5; // UUID текущей сессии (удобно для UI/управления устройствами)
+  int64  user_id             = 6; // полезно BFF, но не обязательно
+}
+
+
+message LoginRequest { string login = 1; string password = 2; }
+message LoginResponse {
+    TokenPair tokens  = 1;   
+}
+message RegisterRequest { string login = 1; string password = 2; }
+message RegisterResponse {
+    TokenPair tokens  = 1;  
+}
+
+message RefreshRequest { string refresh_token = 1; }
+message RefreshResponse {
+    TokenPair tokens  = 1;  
+}
+
+message LogoutRequest { string refresh_token = 1; }
+message LogoutAllRequest { string refresh_token = 1; } 
+
+//message IntrospectRequest { string access_token = 1; }
+//message IntrospectResponse {
+//  bool active = 1; int64 user_id = 2; repeated string roles = 3; int64 exp = 4; int32 ver = 5;
+//}
+
+message ValidateAccessRequest { string access_token = 1; }
+message ValidateAccessResponse {
+  string user_id = 1;
+  string session_id = 2;
+  int32 token_version = 3;
+}

@@ -3,54 +3,127 @@ secrets:
     file: ${DB_PASSWORD_FILE}
   jwt_secret:
     file: ${JWT_SECRET_FILE}
+  jwt_private_key:
+    file: ${JWT_PRIVATE_KEY_FILE}
 
 services:
-  db:
+  # db:
+  #   image: postgres:16-alpine
+  #   secrets:
+  #     - db_password
+  #   environment:
+  #     POSTGRES_USER: ${DB_USER:-app}
+  #     POSTGRES_DB: ${DB_NAME:-appdb}
+  #     POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+  #   healthcheck:
+  #     # чтобы не зависеть от подстановки переменных на хосте — берем env внутри контейнера
+  #     test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 10
+  #   ports:
+  #     # ВАЖНО: внутри контейнера postgres слушает 5432
+  #     - "${DB_PORT:-5432}:5432"
+
+  # --- ВТОРАЯ БД ДЛЯ clientsvc ---
+  clientsvc_db:
     image: postgres:16-alpine
     secrets:
       - db_password
     environment:
-      POSTGRES_USER: ${DB_USER:-app}
-      POSTGRES_DB: ${DB_NAME:-appdb}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_DB: ${DB_NAME}
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     healthcheck:
-      # чтобы не зависеть от подстановки переменных на хосте — берем env внутри контейнера
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
       timeout: 3s
       retries: 10
+    # Если нужно подключаться с хоста — раскомментируйте и поставьте другой порт (например 5433)
     ports:
-      # ВАЖНО: внутри контейнера postgres слушает 5432
-      - "${DB_PORT:-5432}:5432"
+      - "5433:5432"
+  authsvc_db:
+    image: postgres:16-alpine
+    secrets:
+      - db_password
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    # Если нужно подключаться с хоста — раскомментируйте и поставьте другой порт (например 5433)
+    ports:
+      - "5434:5432"
 
-  migrator:
+  # migrator:
+  #   image: migrate/migrate:latest
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   secrets:
+  #     - db_password
+  #   env_file:
+  #     - .env
+  #   # 3. Монтируем наш скрипт как точку входа (entrypoint)
+  #   volumes:
+  #     - ${MIGR_DIR}:/migrations:ro
+  #     - ./entrypoint.sh:/entrypoint.sh:ro # <-- Монтируем скрипт
+  #   entrypoint: ["/bin/sh", "/entrypoint.sh"] 
+  #   restart: "on-failure"
+
+  clientsvc_migrator:
     image: migrate/migrate:latest
     depends_on:
-      db:
+      clientsvc_db:
         condition: service_healthy
     secrets:
       - db_password
     env_file:
       - .env
-    # 3. Монтируем наш скрипт как точку входа (entrypoint)
+    # Переопределяем параметры подключения ТОЛЬКО для clientsvc_migrator
+    environment:
+      DB_HOST: clientsvc_db
     volumes:
-      - ${MIGR_DIR}:/migrations:ro
-      - ./entrypoint.sh:/entrypoint.sh:ro # <-- Монтируем скрипт
-    entrypoint: ["/bin/sh", "/entrypoint.sh"] # <-- Запускаем скрипт
+      - ${CLIENT_MIGR_DIR}:/migrations:ro
+      - ./entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    restart: "on-failure"
+
+  authsvc_migrator:
+    image: migrate/migrate:latest
+    depends_on:
+      authsvc_db:
+        condition: service_healthy
+    secrets:
+      - db_password
+    env_file:
+      - .env
+    environment:
+      DB_HOST: authsvc_db
+    volumes:
+      - ${AUTH_MIGR_DIR}:/migrations:ro
+      - ./entrypoint.sh:/entrypoint.sh:ro
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
     restart: "on-failure"
 
   app:
-    image: ghcr.io/aldz231188/be2:latest 
+    # image: ghcr.io/aldz231188/be2:latest 
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./internal/Dockerfile
       target: dev
     restart: ${APP_RESTART_POLICY:-"no"}
     env_file:
       - .env
     depends_on:
-      migrator:
-        condition: service_completed_successfully
+      clientsvc:
+        condition: service_started
+      authsvc:
+        condition: service_started
     secrets:
       - db_password
       - jwt_secret
@@ -60,11 +133,55 @@ services:
     expose:
       - "${HTTP_PORT}"
 
+  clientsvc:
+    # image: ghcr.io/aldz231188/be2:latest 
+    build:
+      context: .
+      dockerfile: ./services/clientsvc/Dockerfile
+      target: dev
+    restart: ${APP_RESTART_POLICY:-"no"}
+    env_file:
+      - .env
+    depends_on:
+      clientsvc_migrator:
+        condition: service_completed_successfully
+    secrets:
+      - db_password
+      - jwt_secret
+    environment:
+      DB_HOST: clientsvc_db
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+    # expose:
+    #   - "50051"
+  authsvc:
+    # image: ghcr.io/aldz231188/be2:latest 
+    build:
+      context: .
+      dockerfile: ./services/authsvc/Dockerfile
+      target: dev
+    restart: ${APP_RESTART_POLICY:-"no"}
+    env_file:
+      - .env
+    depends_on:
+      authsvc_migrator:
+        condition: service_completed_successfully
+    secrets:
+      - db_password
+      - jwt_private_key
+    environment:
+      DB_HOST: authsvc_db
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      JWT_PRIVATE_KEY_FILE: /run/secrets/jwt_private_key
+    # expose:
+    #   - "50051"
+
   nginx:
     image: nginx:1.27-alpine
     container_name: nginx_gateway
     depends_on:
       - app
+      - clientsvc
     volumes:
       - ./nginx/conf.d:/etc/nginx/templates
       - ./nginx/ssl:/etc/nginx/ssl:ro

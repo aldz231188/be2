@@ -32,7 +32,7 @@ type Address struct {
 
 type User struct {
 	ID           uuid.UUID
-	Username     string
+	Login        string
 	PasswordHash string
 	CreatedAt    time.Time
 	TokenVersion int32

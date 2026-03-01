@@ -2,31 +2,35 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-  # Имя образа в реестре GitHub (автоматически подставит твой ник и репо)
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  GO_VERSION: '1.24.0'
+  SQLC_VERSION: 'v1.29.0'
+  MIGRATE_VERSION: 'v4.18.3'
 
 jobs:
-  # =======================================================
-  # 1. ТЕСТЫ И ЛИНТЕРЫ
-  # =======================================================
   tests:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+
     services:
       postgres:
         image: postgres:16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: appdb
-        ports: [ "5432:5432" ]
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres"
           --health-interval 10s
@@ -34,62 +38,83 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      # Сначала ждем БД, потом накатываем миграции
-      - name: Wait for DB
+      - name: Install tools
         run: |
-          for i in {1..10}; do
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@${MIGRATE_VERSION}
+          go install github.com/sqlc-dev/sqlc/cmd/sqlc@${SQLC_VERSION}
+
+      - name: Prepare databases
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for i in {1..20}; do
             pg_isready -h localhost -U postgres && break
             sleep 1
           done
 
-      - name: Install migrate
-        run: go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+          psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE DATABASE clientsvcdb;
+          CREATE DATABASE authsvcdb;
+          SQL
 
-      - name: Run DB migrations
-        env:
-          DB_URI: postgres://postgres:postgres@localhost:5432/appdb?sslmode=disable
-        run: migrate -path ./internal/infra/db/migrations -database "$DB_URI" up
-
-      - name: Install sqlc & Generate
-        env:
-          DB_URI: postgres://postgres:postgres@localhost:5432/appdb?sslmode=disable
+      - name: Run migrations
         run: |
-          go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
-          sqlc generate
+          migrate -path ./services/clientsvc/infra/db/migrations \
+            -database "postgres://postgres:postgres@localhost:5432/clientsvcdb?sslmode=disable" up
 
-      - name: Test
-        run: go test -v ./...
+          migrate -path ./services/authsvc/internal/infra/db/migrations \
+            -database "postgres://postgres:postgres@localhost:5432/authsvcdb?sslmode=disable" up
 
-  # =======================================================
-  # 2. СБОРКА ОБРАЗА И ОТПРАВКА В РЕЕСТР (ТОЛЬКО ДЛЯ MAIN)
-  # =======================================================
+      - name: Validate sqlc
+        run: |
+          (
+            cd services/clientsvc
+            DB_URI="postgres://postgres:postgres@localhost:5432/clientsvcdb?sslmode=disable" sqlc vet
+            DB_URI="postgres://postgres:postgres@localhost:5432/clientsvcdb?sslmode=disable" sqlc generate
+          )
+
+          (
+            cd services/authsvc
+            DB_URI="postgres://postgres:postgres@localhost:5432/authsvcdb?sslmode=disable" sqlc vet
+            DB_URI="postgres://postgres:postgres@localhost:5432/authsvcdb?sslmode=disable" sqlc generate
+          )
+
+      - name: Run tests
+        run: |
+          (cd contracts && go test ./...)
+          (cd internal && go test ./...)
+          (cd services/clientsvc && go test ./...)
+          (cd services/authsvc && go test ./...)
+
   build-and-push:
-    needs: tests # Ждем, пока пройдут тесты
-    if: github.ref == 'refs/heads/main' # Запускаем только при пуше в main
+    needs: tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write # Разрешаем писать в GHCR
+      packages: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Log in to the Container registry
+      - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
@@ -99,58 +124,35 @@ jobs:
             type=sha,format=short
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
+          file: ./internal/Dockerfile
+          target: prod
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Важно: указываем target из Dockerfile, если у тебя multi-stage (например, prod)
-          target: prod 
 
-  # =======================================================
-  # 3. ДЕПЛОЙ НА СЕРВЕР
-  # =======================================================
   deploy:
     needs: build-and-push
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_ACTOR: ${{ github.actor }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: GITHUB_TOKEN, GITHUB_ACTOR
-
-
+          envs: GITHUB_TOKEN,GITHUB_ACTOR
           script: |
-            # Заходим в папку проекта
             cd workdir/be2
-            
-            # 1. Обновляем код (чтобы подтянуть новый docker-compose.prod.yaml если менялся)
             git pull
-            
-            # 2. Логинимся в реестр GitHub (чтобы скачать приватный образ)
-            # Используем GITHUB_TOKEN, но внутри Runner'а он недоступен напрямую в script,
-            # поэтому здесь просто скачиваем, предполагая, что пакет публичный.
-            # ЕСЛИ ПАКЕТ ПРИВАТНЫЙ: нужно создать PAT (Personal Access Token) и добавить его в secrets сервера.
-            # Для простоты пока считаем, что image скачается.
             echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-            
-            # 3. Скачиваем свежий образ
-            # docker compose -f docker-compose.prod.yml pull app
-            # make pull-prod
-
-            
-            # 4. Перезапускаем контейнеры
             make up-prod
-            
-            # 5. Чистим старые образы, чтобы не забить диск
             docker logout ghcr.io
             docker image prune -f
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_ACTOR: ${{ github.actor }}
