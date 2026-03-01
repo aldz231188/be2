@@ -5,6 +5,7 @@ import (
 	"be2/internal/app/usecase"
 	"be2/internal/config"
 	"be2/internal/domain"
+	"be2/internal/grpcutil"
 	"be2/internal/http/v1/dto"
 	"context"
 	"encoding/json"
@@ -168,39 +169,39 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 // 	h.respondJSON(w, http.StatusOK, dto.TokenResponse{AccessToken: tokens.AccessToken, RefreshToken: tokens.RefreshToken})
 // }
 
-// // Logout godoc
-// // @Summary     Logout current session
-// // @Tags        auth
-// // @Accept      json
-// // @Produce     json
-// // @Param       request body dto.LogoutRequest true "Refresh token"
-// // @Success     200 {object} dto.SuccessResponse
-// // @Failure     400 {object} dto.ErrorResponse
-// // @Failure     401 {object} dto.ErrorResponse
-// // @Failure     500 {object} dto.ErrorResponse
-// // @Router      /logout [post]
-// func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
-// 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
-// 	defer cancel()
+// Logout godoc
+// @Summary     Logout current session
+// @Tags        auth
+// @Accept      json
+// @Produce     json
+// @Param       request body dto.LogoutRequest true "Refresh token"
+// @Success     200 {object} dto.SuccessResponse
+// @Failure     400 {object} dto.ErrorResponse
+// @Failure     401 {object} dto.ErrorResponse
+// @Failure     500 {object} dto.ErrorResponse
+// @Router      /logout [post]
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
+	defer cancel()
 
-// 	var req dto.LogoutRequest
-// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-// 		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
-// 		return
-// 	}
+	var req dto.LogoutRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		h.respondError(w, http.StatusBadRequest, "invalid request body", nil)
+		return
+	}
 
-// 	if err := h.Auth.LogoutCurrent(ctx, req.RefreshToken); err != nil {
-// 		status := http.StatusUnauthorized
-// 		if errors.Is(err, app.ErrInvalidToken) {
-// 			h.respondError(w, status, "invalid or expired token", nil)
-// 			return
-// 		}
-// 		h.respondError(w, status, err.Error(), nil)
-// 		return
-// 	}
+	if err := h.Auth.Logout(ctx, req.RefreshToken); err != nil {
+		status := http.StatusUnauthorized
+		// if errors.Is(err, app.ErrInvalidToken) {
+		// h.respondError(w, status, "invalid or expired token", nil)
+		// return
+		// }
+		h.respondError(w, status, err.Error(), nil)
+		return
+	}
 
-// 	h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
-// }
+	h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
+}
 
 // // LogoutAll godoc
 // // @Summary     Logout from all sessions
@@ -253,6 +254,11 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateClient(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
+	uid, ok := r.Context().Value(grpcutil.CtxUserID).(string)
+	if !ok || uid == "" {
+		h.respondError(w, http.StatusUnauthorized, "invalid token subject", nil)
+		return
+	}
 
 	var clientRow dto.CreateClientRequest
 	if err := json.NewDecoder(r.Body).Decode(&clientRow); err != nil {
@@ -266,7 +272,7 @@ func (h *Handler) CreateClient(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	clientID, err := h.CS.Create(ctx, clientRow.UserID, clientRow.ClientName, clientRow.ClientSurname)
+	clientID, err := h.CS.Create(ctx, uid, clientRow.ClientName, clientRow.ClientSurname)
 	if err != nil {
 		h.handleDomainError(w, err)
 		return

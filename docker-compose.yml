@@ -3,6 +3,8 @@ secrets:
     file: ${DB_PASSWORD_FILE}
   jwt_secret:
     file: ${JWT_SECRET_FILE}
+  jwt_private_key:
+    file: ${JWT_PRIVATE_KEY_FILE}
 
 services:
   # db:
@@ -166,11 +168,11 @@ services:
         condition: service_completed_successfully
     secrets:
       - db_password
-      - jwt_secret
+      - jwt_private_key
     environment:
       DB_HOST: authsvc_db
       DB_PASSWORD_FILE: /run/secrets/db_password
-      JWT_SECRET_FILE: /run/secrets/jwt_secret
+      JWT_PRIVATE_KEY_FILE: /run/secrets/jwt_private_key
     # expose:
     #   - "50051"
 

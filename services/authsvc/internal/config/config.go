@@ -11,6 +11,9 @@ type Config struct {
 	DepTimeout      time.Duration // таймаут на один вызов зависимости
 	ShutdownTimeout time.Duration
 	AuthSvcAddr     string
+	HTTPAddr        string
+	JWTIssuer       string
+	JWTAudience     string
 	Host            string
 	Port            string
 	User            string
@@ -26,6 +29,9 @@ func LoadConfig() (Config, error) {
 		DB:              os.Getenv("DB_NAME"),
 		SSLMode:         os.Getenv("SSLMODE"),
 		AuthSvcAddr:     os.Getenv("AUTH_SVC_ADDR_FULL"),
+		HTTPAddr:        envDefault("AUTH_HTTP_ADDR", ":8081"),
+		JWTIssuer:       os.Getenv("JWT_ISS"),
+		JWTAudience:     os.Getenv("JWT_AUD"),
 		DepTimeout:      msEnv("DEP_TIMEOUT_MS", 1500) * time.Millisecond,
 		ShutdownTimeout: msEnv("SHUTDOWN_TIMEOUT_MS", 10_000) * time.Millisecond,
 	}
@@ -44,4 +50,11 @@ func msEnv(k string, def int) time.Duration {
 		return time.Duration(def)
 	}
 	return time.Duration(n)
+}
+
+func envDefault(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }

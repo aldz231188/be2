@@ -3,10 +3,12 @@ package app
 import (
 	"be2/services/authsvc/internal/config"
 	"be2/services/authsvc/internal/domain"
+	"be2/services/authsvc/internal/jwtkeys"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -44,7 +46,7 @@ type AuthService interface {
 	Authenticate(ctx context.Context, login, password string) (TokenPair, error)
 	Register(ctx context.Context, login, password string) (TokenPair, error)
 	Refresh(ctx context.Context, refreshToken string) (TokenPair, error)
-	LogoutCurrent(ctx context.Context, refreshToken string) error
+	Logout(ctx context.Context, refreshToken string) error
 	LogoutAll(ctx context.Context, refreshToken string) error
 	ValidateAccessToken(ctx context.Context, token string) (*TokenClaims, error)
 }
@@ -52,18 +54,22 @@ type AuthService interface {
 type authService struct {
 	users      domain.UserRepo
 	sessions   domain.SessionRepo
-	secret     []byte
+	privateKey *jwtkeys.RSAKey
+	issuer     string
+	audience   string
 	accessTTL  time.Duration
 	refreshTTL time.Duration
 }
 
 var _ AuthService = (*authService)(nil)
 
-func NewAuthService(users domain.UserRepo, sessions domain.SessionRepo, secrets *config.Secrets) AuthService {
+func NewAuthService(users domain.UserRepo, sessions domain.SessionRepo, keys *jwtkeys.RSAKey, cfg config.Config) AuthService {
 	return &authService{
 		users:      users,
 		sessions:   sessions,
-		secret:     []byte(secrets.JWTSecret),
+		privateKey: keys,
+		issuer:     cfg.JWTIssuer,
+		audience:   cfg.JWTAudience,
 		accessTTL:  15 * time.Minute,
 		refreshTTL: 30 * 24 * time.Hour,
 	}
@@ -121,7 +127,7 @@ func (s *authService) Refresh(ctx context.Context, refreshToken string) (TokenPa
 	return s.issueSessionTokens(ctx, user)
 }
 
-func (s *authService) LogoutCurrent(ctx context.Context, refreshToken string) error {
+func (s *authService) Logout(ctx context.Context, refreshToken string) error {
 	claims, err := s.parseToken(refreshToken, tokenTypeRefresh)
 	if err != nil {
 		return err
@@ -176,31 +182,41 @@ func (s *authService) issueSessionTokens(ctx context.Context, user domain.User) 
 	}
 
 	now := time.Now()
+	accessClaims := jwt.RegisteredClaims{
+		Subject:   user.ID.String(),
+		ExpiresAt: jwt.NewNumericDate(now.Add(s.accessTTL)),
+		IssuedAt:  jwt.NewNumericDate(now),
+		ID:        sessionID,
+		Issuer:    s.issuer,
+	}
+	if s.audience != "" {
+		accessClaims.Audience = []string{s.audience}
+	}
 	access, err := s.signClaims(TokenClaims{
-		TokenType:    tokenTypeAccess,
-		TokenVersion: user.TokenVersion,
-		SessionID:    sessionID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   user.ID.String(),
-			ExpiresAt: jwt.NewNumericDate(now.Add(s.accessTTL)),
-			IssuedAt:  jwt.NewNumericDate(now),
-			ID:        sessionID,
-		},
+		TokenType:        tokenTypeAccess,
+		TokenVersion:     user.TokenVersion,
+		SessionID:        sessionID,
+		RegisteredClaims: accessClaims,
 	})
 	if err != nil {
 		return TokenPair{}, err
 	}
 
+	refreshClaims := jwt.RegisteredClaims{
+		Subject:   user.ID.String(),
+		ExpiresAt: jwt.NewNumericDate(refreshExpires),
+		IssuedAt:  jwt.NewNumericDate(now),
+		ID:        sessionID,
+		Issuer:    s.issuer,
+	}
+	if s.audience != "" {
+		refreshClaims.Audience = []string{s.audience}
+	}
 	refresh, err := s.signClaims(TokenClaims{
-		TokenType:    tokenTypeRefresh,
-		TokenVersion: user.TokenVersion,
-		SessionID:    sessionID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   user.ID.String(),
-			ExpiresAt: jwt.NewNumericDate(refreshExpires),
-			IssuedAt:  jwt.NewNumericDate(now),
-			ID:        sessionID,
-		},
+		TokenType:        tokenTypeRefresh,
+		TokenVersion:     user.TokenVersion,
+		SessionID:        sessionID,
+		RegisteredClaims: refreshClaims,
 	})
 	if err != nil {
 		return TokenPair{}, err
@@ -236,12 +252,26 @@ func (s *authService) ensureSessionValid(ctx context.Context, claims *TokenClaim
 }
 
 func (s *authService) parseToken(token, expectedType string) (*TokenClaims, error) {
+	if s.privateKey == nil || s.privateKey.Public == nil {
+		return nil, ErrInvalidToken
+	}
+	parserOptions := []jwt.ParserOption{
+		jwt.WithValidMethods([]string{jwt.SigningMethodRS256.Alg()}),
+		jwt.WithIssuer(s.issuer),
+	}
+	if s.audience != "" {
+		parserOptions = append(parserOptions, jwt.WithAudience(s.audience))
+	}
+
 	parsed, err := jwt.ParseWithClaims(token, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		if token.Method.Alg() != jwt.SigningMethodRS256.Alg() {
 			return nil, ErrInvalidToken
 		}
-		return s.secret, nil
-	})
+		if kid, ok := token.Header["kid"].(string); ok && kid != s.privateKey.KID {
+			return nil, ErrInvalidToken
+		}
+		return s.privateKey.Public, nil
+	}, parserOptions...)
 	if err != nil {
 		return nil, ErrInvalidToken
 	}
@@ -259,8 +289,12 @@ func (s *authService) parseToken(token, expectedType string) (*TokenClaims, erro
 }
 
 func (s *authService) signClaims(claims TokenClaims) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signed, err := token.SignedString(s.secret)
+	if s.privateKey == nil || s.privateKey.Private == nil {
+		return "", fmt.Errorf("missing signing key")
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	token.Header["kid"] = s.privateKey.KID
+	signed, err := token.SignedString(s.privateKey.Private)
 	if err != nil {
 		return "", err
 	}

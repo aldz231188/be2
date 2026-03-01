@@ -6,6 +6,7 @@ import (
 	"be2/services/authsvc/internal/domain"
 	"context"
 	"errors"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"log/slog"
 )
 
@@ -127,7 +128,7 @@ func (h *Handler) HandleRefresh(ctx context.Context, r *authv1.RefreshRequest) (
 	}, nil
 }
 
-func (h *Handler) HandleLogout(ctx context.Context, r *authv1.LogoutRequest) error {
+func (h *Handler) Logout(ctx context.Context, r *authv1.LogoutRequest) (*emptypb.Empty, error) {
 	// ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	// defer cancel()
 
@@ -137,18 +138,18 @@ func (h *Handler) HandleLogout(ctx context.Context, r *authv1.LogoutRequest) err
 	// 	return
 	// }
 
-	if err := h.Auth.LogoutCurrent(ctx, r.RefreshToken); err != nil {
+	if err := h.Auth.Logout(ctx, r.RefreshToken); err != nil {
 		// status := http.StatusUnauthorized
 		if errors.Is(err, app.ErrInvalidToken) {
 			// h.respondError(w, status, "invalid or expired token", nil)
-			return errors.New("invalid or expired token")
+			return &emptypb.Empty{}, errors.New("invalid or expired token")
 		}
 		// h.respondError(w, status, err.Error(), nil)
-		return err
+		return &emptypb.Empty{}, err
 	}
 
 	// h.respond(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
-	return nil
+	return &emptypb.Empty{}, nil
 }
 
 func (h *Handler) HandleLogoutAll(ctx context.Context, r *authv1.LogoutAllRequest) error {
@@ -173,6 +174,22 @@ func (h *Handler) HandleLogoutAll(ctx context.Context, r *authv1.LogoutAllReques
 
 	// h.respond(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
 	return nil
+}
+
+func (h *Handler) ValidateAccess(ctx context.Context, r *authv1.ValidateAccessRequest) (*authv1.ValidateAccessResponse, error) {
+	claims, err := h.Auth.ValidateAccessToken(ctx, r.GetAccessToken())
+	if err != nil {
+		if errors.Is(err, app.ErrInvalidToken) {
+			return nil, errors.New("invalid or expired token")
+		}
+		return nil, err
+	}
+
+	return &authv1.ValidateAccessResponse{
+		UserId:       claims.Subject,
+		SessionId:    claims.SessionID,
+		TokenVersion: claims.TokenVersion,
+	}, nil
 }
 
 // func (h *Handler) handleDomainError(w http.ResponseWriter, err error) {
