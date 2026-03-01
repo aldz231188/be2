@@ -176,6 +176,22 @@ func (h *Handler) HandleLogoutAll(ctx context.Context, r *authv1.LogoutAllReques
 	return nil
 }
 
+func (h *Handler) ValidateAccess(ctx context.Context, r *authv1.ValidateAccessRequest) (*authv1.ValidateAccessResponse, error) {
+	claims, err := h.Auth.ValidateAccessToken(ctx, r.GetAccessToken())
+	if err != nil {
+		if errors.Is(err, app.ErrInvalidToken) {
+			return nil, errors.New("invalid or expired token")
+		}
+		return nil, err
+	}
+
+	return &authv1.ValidateAccessResponse{
+		UserId:       claims.Subject,
+		SessionId:    claims.SessionID,
+		TokenVersion: claims.TokenVersion,
+	}, nil
+}
+
 // func (h *Handler) handleDomainError(w http.ResponseWriter, err error) {
 // 	var (
 // 		status  = http.StatusInternalServerError

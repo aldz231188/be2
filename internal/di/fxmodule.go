@@ -2,7 +2,6 @@ package di
 
 import (
 	usecase "be2/internal/app/usecase"
-	"be2/internal/authz"
 	auth "be2/internal/clients/auth"
 	client "be2/internal/clients/client"
 	router "be2/internal/http"
@@ -21,7 +20,6 @@ import (
 )
 
 var App = fx.Options(
-	authz.Module,
 	grpcutil.Module,
 	middleware.Module,
 	config.Module,

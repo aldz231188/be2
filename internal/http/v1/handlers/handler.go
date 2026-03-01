@@ -5,6 +5,7 @@ import (
 	"be2/internal/app/usecase"
 	"be2/internal/config"
 	"be2/internal/domain"
+	"be2/internal/grpcutil"
 	"be2/internal/http/v1/dto"
 	"context"
 	"encoding/json"
@@ -198,7 +199,6 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		h.respondError(w, status, err.Error(), nil)
 		return
 	}
-	// h.setRefreshCookie(w, tokens.RefreshToken, time.Unix(tokens.RefreshExpiresAt, 0))
 
 	h.respondJSON(w, http.StatusOK, dto.SuccessResponse{Status: "ok"})
 }
@@ -254,6 +254,11 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateClient(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 3*time.Second)
 	defer cancel()
+	uid, ok := r.Context().Value(grpcutil.CtxUserID).(string)
+	if !ok || uid == "" {
+		h.respondError(w, http.StatusUnauthorized, "invalid token subject", nil)
+		return
+	}
 
 	var clientRow dto.CreateClientRequest
 	if err := json.NewDecoder(r.Body).Decode(&clientRow); err != nil {
@@ -267,7 +272,7 @@ func (h *Handler) CreateClient(w http.ResponseWriter, r *http.Request) {
 	// 	return
 	// }
 
-	clientID, err := h.CS.Create(ctx, clientRow.UserID, clientRow.ClientName, clientRow.ClientSurname)
+	clientID, err := h.CS.Create(ctx, uid, clientRow.ClientName, clientRow.ClientSurname)
 	if err != nil {
 		h.handleDomainError(w, err)
 		return
