@@ -77,11 +77,12 @@ lint:
 test:
 	go test ./...
 
-COMPOSE := docker compose -f docker-compose.yml 
+COMPOSE := docker compose -f docker-compose.yml
+COMPOSE_PROD := docker compose -f docker-compose.prod.yml
 
 up-prod:
-	$(COMPOSE) pull app
-	$(COMPOSE) up -d --no-build --pull=always
+	$(COMPOSE_PROD) pull
+	$(COMPOSE_PROD) up -d --no-build
 up:
 	$(COMPOSE) up -d --build 
 down:
