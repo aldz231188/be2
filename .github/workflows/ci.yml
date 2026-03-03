@@ -118,10 +118,13 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          context: .
+          file: ./internal/Dockerfile
+          target: prod
+          push: true
           tags: |
-            type=raw,value=latest
-            type=sha,format=short
+            ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/app:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/app:${{ github.sha }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
