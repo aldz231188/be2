@@ -12,7 +12,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_REPO: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }}
   GO_VERSION: '1.24.0'
   SQLC_VERSION: 'v1.29.0'
   MIGRATE_VERSION: 'v4.18.3'
@@ -95,12 +95,6 @@ jobs:
           (cd services/clientsvc && go test ./...)
           (cd services/authsvc && go test ./...)
 
-      - name: Validate production compose
-        env:
-          GHCR_REPO: ${{ env.IMAGE_REPO }}
-          IMAGE_TAG: test
-        run: docker compose -f docker-compose.prod.yml config >/dev/null
-
   build-and-push:
     needs: tests
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -120,8 +114,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push app image
-        uses: docker/build-push-action@v6
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
         with:
           context: .
           file: ./internal/Dockerfile
@@ -131,27 +126,15 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/app:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/app:${{ github.sha }}
 
-      - name: Build and push clientsvc image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./services/clientsvc/Dockerfile
+          file: ./internal/Dockerfile
           target: prod
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/clientsvc:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/clientsvc:${{ github.sha }}
-
-      - name: Build and push authsvc image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: ./services/authsvc/Dockerfile
-          target: prod
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/authsvc:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/authsvc:${{ github.sha }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
   deploy:
     needs: build-and-push
@@ -164,17 +147,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_ACTOR: ${{ github.actor }}
-          GHCR_REPO: ${{ github.repository }}
-          IMAGE_TAG: ${{ github.sha }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          envs: GITHUB_TOKEN,GITHUB_ACTOR,GHCR_REPO,IMAGE_TAG
+          envs: GITHUB_TOKEN,GITHUB_ACTOR
           script: |
             cd workdir/be2
             git pull
             echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
-            GHCR_REPO="$GHCR_REPO" IMAGE_TAG="$IMAGE_TAG" make up-prod
+            make up-prod
             docker logout ghcr.io
             docker image prune -f
