@@ -15,14 +15,6 @@ The current auth implementation is not production-like because:
 ## Goal
 Make authentication flow internally consistent, testable, and safe enough to serve as the baseline for further production hardening.
 
-
-## Current contract drift snapshot (from repository state)
-- `auth.proto` declares RPCs `Login`, `Refresh`, and `LogoutAll`, but authsvc gRPC handlers currently implement `Register`, `Logout`, and `ValidateAccess`, with `HandleRefresh`/`HandleLogoutAll` method names that do not match the generated gRPC interface and no `Login` handler implementation.
-- `TokenPair` in `auth.proto` still contains `user_id` as `int64`, while UUID is the domain identity format and `ValidateAccessResponse.user_id` is already a string.
-- BFF auth client (`internal/clients/auth/service.go`) currently exposes `Register`, `Logout`, and `ValidateAccess`, but not `Login`, `Refresh`, or `LogoutAll`.
-- BFF routes currently wire `POST /register` and `POST /logout`; `POST /login`, `POST /refresh`, and logout-all are present only as commented lines.
-- HTTP handler code sets a refresh cookie in `Register` but also returns `refresh_token` in JSON; login/refresh/logout-all handlers are commented out, leaving lifecycle behavior partial and inconsistent.
-
 ## In scope
 1. Align auth protobuf contract with actual domain model.
 2. Fully implement the auth lifecycle:
